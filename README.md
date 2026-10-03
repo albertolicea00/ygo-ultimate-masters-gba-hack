@@ -19,3 +19,7 @@ This project is a romhack for the GBA game *Yu-Gi-Oh! World Championship Tournam
 
 - `.workspace/`: Temporary files, working ROMs, and reference repositories (e.g., decompilations). *Not versioned*.
 - `tools/`: Utility scripts created during the reverse engineering process.
+- `docs/`: Write-ups and running logs. See [`docs/REVERSE_ENGINEERING_LOG.md`](docs/REVERSE_ENGINEERING_LOG.md)
+  for concrete findings, confirmed offsets, and working techniques (toolchain setup gotchas,
+  the live mGBA automation harness, in-game navigation steps, etc.) — read this before
+  re-deriving something that may already be solved.
