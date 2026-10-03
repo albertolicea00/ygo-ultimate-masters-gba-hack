@@ -9,6 +9,7 @@
 !.workspace/README.md
 scratch/
 tmp/
+execution
 
 # Python
 __pycache__/
