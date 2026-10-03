@@ -145,6 +145,51 @@ source via SWIG and aren't on PyPI). What actually works, end to end:
    screenshot/AppleScript round-trip latency) rather than an external bash
    polling loop.
 
+## Session 2 update — turn-flag hunt, still open
+
+Spent a long session trying to pin down the exact moment of "opponent's turn active"
+via burst-sampling EWRAM. Concrete findings, still unresolved:
+
+- A plain bash polling loop (interrupt → dump → continue → sleep ~150ms, repeated)
+  is **too slow**: the CPU opponent's entire turn (draw, main phase play, attack)
+  resolves in well under a second once no blocking prompt is in the way. All 12
+  samples in one such burst showed identical state (same LP, same hand) — the
+  real transition happened in the gap *after* the burst loop, before the next
+  screenshot.
+- Switched to an in-process Lua `callbacks:add('frame', fn)` sampler (armed via
+  the Scripting console, writes `emu:readRange(0x02000000,0x40000)` to a new file
+  every N frames) — this avoids external polling latency entirely. Confirmed
+  working: `luaFrameN` global increments correctly frame-by-frame even across
+  many separate `osascript` calls (checked by reading the variable back twice a
+  second apart: advanced ~67 frames in ~1s, i.e. the core really is running at
+  roughly full speed throughout).
+- At 7 cards in hand, End Phase triggers a mandatory **"Discard from your hand"**
+  prompt. This uses the *same full-board cursor grid* as normal play (confirmed:
+  Up/Down cycles through all zone rows on both sides, wrapping top-to-bottom) —
+  it is NOT restricted to the hand row. Pressing A while the cursor sits on a
+  zone that isn't a valid discard target (e.g. an opponent zone, or an empty
+  slot) is silently ignored — nothing visibly changes, no error, which looks
+  identical to "input not being delivered" and cost a lot of back-and-forth to
+  rule out. **Before touching A here, confirm via screenshot that the cursor
+  box is actually sitting on one of your own hand cards.**
+- Belt-and-suspenders fix applied: `run_lua.sh` now targets
+  `window "Scripting"` by name (was `window 1`, which is only correct when the
+  Scripting window happens to be frontmost/first — not guaranteed) and retries
+  up to 5x on transient System-Events window-enumeration errors (these happen
+  occasionally and seem environmental — e.g. this Mac is in active interactive
+  use by its owner at the same time — not caused by anything in our scripts).
+- **Still not found**: the actual RAM address of the active-player/input-lock
+  flag. Next session should pick this back up either by (a) retrying the
+  frame-callback capture now that the discard-prompt confusion is understood
+  and documented, ideally arming the sampler right as End Phase is confirmed
+  and *before* fighting with any discard prompt, or (b) going straight to
+  Ghidra: the ROM is already imported and fully auto-analyzed in
+  `/tmp/ghidra_project/wct06` (not in the repo — regenerate with
+  `analyzeHeadless /tmp/ghidra_project wct06 -import <rom> -processor "ARM:LE:32:v4t"`
+  if that scratch dir is gone), search for code that reads I/O register
+  `0x04000130` (KEYINPUT) and trace which callers gate on a turn/side check
+  before acting on it.
+
 ## Open questions
 
 - Exact ROM offset of the card-art block in *this* file (not EDS).
