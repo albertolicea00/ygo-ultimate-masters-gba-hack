@@ -1,0 +1,27 @@
+# GBA ROMs and saves
+*.gba
+*.sav
+*.sgm
+*.ss0
+
+# Workspace and temporary files
+.workspace/
+scratch/
+tmp/
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+.env
+venv/
+ENV/
+
+# OS generated files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
