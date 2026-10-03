@@ -5,7 +5,8 @@
 *.ss0
 
 # Workspace and temporary files
-.workspace/
+.workspace/*
+!.workspace/README.md
 scratch/
 tmp/
 
