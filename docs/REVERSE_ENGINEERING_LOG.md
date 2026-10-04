@@ -190,6 +190,53 @@ via burst-sampling EWRAM. Concrete findings, still unresolved:
   `0x04000130` (KEYINPUT) and trace which callers gate on a turn/side check
   before acting on it.
 
+## Session 2 end-of-session status (stopped mid-attempt, resume here)
+
+Root cause confirmed from this session, two blockers that ate most of the time:
+
+1. **The CPU opponent's entire turn resolves in well under 4 frames** once no
+   prompt is blocking it (draw, main-phase play, attack all happen near-instantly
+   at this difficulty). A 2-frames-per-sample Lua callback already missed it
+   entirely (LP had already changed by the very first sample). **Sampling must
+   be every single frame (`luaSampleEvery=1`), armed immediately before the
+   keypress that confirms End Phase** — not after, not a coarser stride.
+2. **Another environmental gotcha found this session, likely the root cause of
+   most of the earlier "input isn't registering" confusion**: this is the
+   user's actively-used Mac, and when they switch Spaces/apps away from mGBA,
+   both `CGWindowListCopyWindowInfo` (Quartz, screenshot capture) and System
+   Events UI scripting stop seeing mGBA's windows at all (not an error, just
+   genuinely not there — `CGWindowListOptionOnScreenOnly` only sees windows on
+   the active Space). Fix applied: `run_lua.sh` now runs
+   `osascript -e 'tell application "mGBA" to activate'` first, which switches
+   back to mGBA's Space automatically. Do this (or check it already happened)
+   before trusting any "button press had no visible effect" observation.
+
+Still true from earlier: discard-prompt cursor needs ~5 Down presses from a
+fresh prompt to reach the hand row (it starts somewhere over the board, not
+the hand) before A does anything.
+
+**Exact point to resume from**: mid-way through handling a "Discard from your
+hand" prompt (hand was back up to 7 after drawing "Creature Swap"). Plan for
+next session, in order:
+1. Press Down ~5x (screenshot-verify the cursor box lands on an actual hand
+   card, not a field zone) and discard with A.
+2. *Immediately* arm the Lua sampler with `luaSampleEvery=1`,
+   `luaSampleMax` around 90–120 (1.5–2s at 60fps) via the Scripting console
+   REPL — this is the actual capture window, no more messing with phase
+   menus after this point.
+3. Let it run untouched for ~2s real time, then pull the dumped frame files
+   from `.workspace/claude_session/screenshots/luaburst/` (named `fNNNNNN.bin`,
+   raw 256KB EWRAM each) and diff consecutive frames in Python
+   (`struct`/byte-compare) to find exactly which frame the LP value changes on
+   (search for the known pre-attack and post-attack LP as u16 little-endian,
+   same technique as the `6300`/`4600`/`2900` searches earlier in this file) —
+   then look at what *else* changed in that same frame or the few frames
+   right before it. That's the turn-flag candidate.
+4. Cross-check any candidate address against Ghidra (already imported +
+   analyzed at `/tmp/ghidra_project/wct06` — regenerate if that scratch dir
+   is gone) by finding what code reads it and confirming it also gates the
+   d-pad/cursor-movement handler, not just something incidental.
+
 ## Open questions
 
 - Exact ROM offset of the card-art block in *this* file (not EDS).
