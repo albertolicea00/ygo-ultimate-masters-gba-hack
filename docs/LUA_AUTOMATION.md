@@ -173,6 +173,24 @@ needed.
   blank (picks the largest matching window — careful, this can grab the
   Scripting console if it happens to be larger than the game window).
 
+## In-game navigation map (this build, Free Duel vs. Kuriboh/level 1)
+
+Title screen → **Start** → name entry (on-screen keyboard: arrow keys move
+the highlight, A picks a letter, navigate to "OK" and press A) → "Ok?"
+Yes/No → icon select (A on default) → first-deck select (A on default) →
+main menu (**Deck Edit / Free Duel / Challenge / Get Cards / Forb-Ltd Lists
+/ Options**) → Free Duel → opponent select (A on default = Kuriboh at level
+1) → coin toss (A on default = Heads) → wait for the coin animation → real
+duel starts.
+
+**Phase control**: pressing **B** while a field zone (not a card) is
+selected opens a direct "Select phase to enter" menu (**M1 / BP / EP**,
+or **BP / M2 / EP** etc. depending on current phase) — this is the fast way
+to skip straight to End Phase. Start does **not** open this menu — it opens
+card-detail view if a card happens to be selected, or does nothing on an
+empty zone. The L/R shoulder buttons do **nothing** for phase control
+(tried, confirmed no effect).
+
 ## In-progress: fully in-Lua causal test (started, not finished)
 
 Goal: prove the `0x18F` turn-flag patch (see `MEMORY_FINDINGS.md`) actually
