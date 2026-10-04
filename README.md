@@ -19,7 +19,15 @@ This project is a romhack for the GBA game *Yu-Gi-Oh! World Championship Tournam
 
 - `.workspace/`: Temporary files, working ROMs, and reference repositories (e.g., decompilations). *Not versioned*.
 - `tools/`: Utility scripts created during the reverse engineering process.
-- `docs/`: Write-ups and running logs. See [`docs/REVERSE_ENGINEERING_LOG.md`](docs/REVERSE_ENGINEERING_LOG.md)
-  for concrete findings, confirmed offsets, and working techniques (toolchain setup gotchas,
-  the live mGBA automation harness, in-game navigation steps, etc.) — read this before
-  re-deriving something that may already be solved.
+- `docs/`: Write-ups, findings, and working techniques — **read these before re-deriving
+  something that may already be solved**:
+  - [`docs/ROADMAP.md`](docs/ROADMAP.md) — current status of both project goals and the
+    concrete next step for each.
+  - [`docs/MEMORY_FINDINGS.md`](docs/MEMORY_FINDINGS.md) — confirmed ROM/RAM facts: offsets,
+    addresses, the turn-flag candidate, what's still unconfirmed.
+  - [`docs/LUA_AUTOMATION.md`](docs/LUA_AUTOMATION.md) — how the live mGBA automation harness
+    works (Lua console scripting, macOS Accessibility, screenshotting) and its gotchas.
+  - [`docs/GHIDRA_WORKFLOW.md`](docs/GHIDRA_WORKFLOW.md) — how to set up and use Ghidra for
+    the static-analysis side (install gotchas, importing/analyzing this ROM, next steps).
+  - [`docs/REVERSE_ENGINEERING_LOG.md`](docs/REVERSE_ENGINEERING_LOG.md) — short append-only
+    chronological log, one entry per session, pointing into the docs above.
