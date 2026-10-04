@@ -237,6 +237,78 @@ next session, in order:
    is gone) by finding what code reads it and confirming it also gates the
    d-pad/cursor-movement handler, not just something incidental.
 
+## Session 3 — found the turn-state flag, causal proof still pending
+
+**Root cause: the live duel state is in IWRAM (`0x03000000`, 32KB), not EWRAM.**
+Proven by capturing 240 consecutive frames of EWRAM (`0x02000000`-`0x02040000`)
+spanning an entire duel turn, including a full duel ending (win/loss screen) —
+every single byte was identical across all 240 frames, despite the game state
+changing enormously. EWRAM in this build holds static data (card tables,
+text); the mutable per-duel state (whose turn, phase, LP, etc.) lives in
+IWRAM instead. This single finding is why earlier EWRAM-based burst-sampling
+attempts (Session 2) could never have worked, no matter how fine the timing.
+
+**Strong candidate for the active-turn/input-lock flag: IWRAM offset `0x18F`
+(absolute address `0x0300018F`).** Found by sampling IWRAM every single frame
+(no stride) across a full End-Phase → opponent-turn → back-to-me cycle (300
+frames). Value sequence: `252` (frames 1–32, my End Phase still resolving) →
+`0` (frames 33–74, opponent's entire turn) → `252` (frames 75–300, back on my
+turn). This is the cleanest signal found — a single step down and a single
+step back up, landing exactly on the turn boundaries. No other byte in all of
+IWRAM showed a pattern this clean (checked all offsets with ≤6 value
+transitions across the capture; most of those were 1-frame animation pulses
+tied to the transition *event*, not a persistent state — `0x18F` is the one
+persistent value that tracks the *state*). Likely encoding: `0xFC` (252) =
+"it's your turn", `0x00` = "not your turn" (sentinel-style boolean, not a
+literal 0/1 — common in this era of GBA code).
+
+A live frame-callback patch was installed via the Lua console and left
+running:
+```lua
+callbacks:add('frame', function()
+  if emu:read8(0x0300018F) == 0 then emu:write8(0x0300018F, 252) end
+end)
+```
+This correctly fires (confirmed non-zero `luaForceCount`), but **we have not
+yet confirmed it actually restores field navigation during the opponent's
+turn.** The blocker is purely practical: the CPU opponent's entire turn
+resolves in well under a second (consistent with Session 2's finding), which
+is faster than any human-speed loop of "press a direction key via
+AppleScript → screenshot → look" can react to. Every attempt this session to
+manually test "can I move the cursor right now" landed after the turn had
+already passed back to the human player naturally, so the screenshots prove
+nothing either way about whether the patch worked.
+
+**Next step, concretely**: don't test this by hand. Write the whole
+test — force the flag, inject a direction key via `emu:setKeys()`, and check
+whether some cursor-position byte actually moved — as one self-contained Lua
+script run from a single frame callback, so it all happens at emulator frame
+granularity with no AppleScript/screenshot round-trip in the loop at all. That
+requires first finding the cursor-position byte in IWRAM the same way `0x18F`
+was found: diff IWRAM frame-by-frame while manually pressing a direction key
+during a normal (player) turn, and look for the byte whose value changes
+exactly on those frames. A first attempt at this today was contaminated — the
+two scripted Right-presses landed on a phase-select menu instead of moving
+the field cursor (the cursor context from a prior step was already on a
+menu-opening icon, not a field zone) — so the capture didn't isolate the right
+byte. Redo this cleanly: confirm via screenshot that the ally cursor is on a
+plain field/hand zone (not a special icon) *before* arming the sampler and
+pressing Right.
+
+### Environment gotcha found this session: macOS Accessibility permission
+
+A big chunk of this session's early flakiness (`"Can't get window ... of
+process mGBA"`, inputs silently not registering) turned out to be **macOS
+revoking/never-granting the Accessibility permission** for the terminal app
+running these scripts, not a Spaces/focus issue as first suspected in Session
+2. The actual error when this happens is explicit and unambiguous:
+`"osascript is not allowed assistive access."` — if that string appears,
+stop debugging the script logic and go straight to **System Settings →
+Privacy & Security → Accessibility** and check the terminal app is toggled
+on. Symptoms *without* that explicit error (just "can't get window", window
+lists coming back empty) are more likely the Spaces/focus issue from Session
+2 — `run_lua.sh` now self-heals that by activating mGBA before every call.
+
 ## Open questions
 
 - Exact ROM offset of the card-art block in *this* file (not EDS).
