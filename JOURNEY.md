@@ -1,19 +1,11 @@
-# Reverse Engineering Log
+# Journey
 
-Append-only chronological log. One short entry per session — what happened,
-pointing into the topic docs for the actual durable content:
+Append-only, chronological, one section per session: what day, what was
+found. Durable reference material lives elsewhere — this file is "what
+happened when", not "what's true".
 
-- [`ROADMAP.md`](ROADMAP.md) — current status of both objectives, next
-  concrete steps.
-- [`MEMORY_FINDINGS.md`](MEMORY_FINDINGS.md) — confirmed facts about the ROM
-  and RAM (offsets, addresses, evidence).
-- [`LUA_AUTOMATION.md`](LUA_AUTOMATION.md) — how to drive mGBA headlessly
-  (Lua console, Accessibility, screenshotting), gotchas.
-- [`GHIDRA_WORKFLOW.md`](GHIDRA_WORKFLOW.md) — how to set up and use Ghidra
-  for the static-analysis side.
-
-Don't write new findings here — put them in the relevant topic doc above,
-then add one line below.
+Don't write new findings here — put them in the relevant technical doc, then
+add a dated entry below.
 
 ---
 
@@ -45,5 +37,5 @@ during the opponent's). Installed a live Lua patch forcing it back to `252`.
 opponent's turn is faster than any human-speed test loop can verify by hand.
 Also found and fixed a real blocker: macOS was denying the Accessibility
 permission to the terminal running the automation scripts the whole time,
-which explained most of Session 2's flakiness. Split this log into the
-topic docs above per the user's request, instead of one growing file.
+which explained most of Session 2's flakiness. Split the single findings log
+into topic docs per the user's request, instead of one growing file.
