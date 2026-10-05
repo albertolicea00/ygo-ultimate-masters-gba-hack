@@ -21,9 +21,9 @@ See our [`ROADMAP.md`](ROADMAP.md) for the current status of both project goals 
 
 Write-ups, findings, and working techniques are stored in the `docs/` directory. **Read these before re-deriving something that may already be solved**:
 
-- [`docs/MEMORY_FINDINGS.md`](docs/MEMORY_FINDINGS.md) — confirmed ROM/RAM facts: offsets, addresses, the turn-flag candidate, what's still unconfirmed.
-- [`docs/LUA_AUTOMATION.md`](docs/LUA_AUTOMATION.md) — how the live mGBA automation harness works (Lua console scripting, macOS Accessibility, screenshotting) and its gotchas.
-- [`docs/GHIDRA_WORKFLOW.md`](docs/GHIDRA_WORKFLOW.md) — how to set up and use Ghidra for the static-analysis side (install gotchas, importing/analyzing this ROM, next steps).
+- [`MEMORY_FINDINGS.md`](docs/MEMORY_FINDINGS.md) — confirmed ROM/RAM facts: offsets, addresses, the turn-flag candidate, what's still unconfirmed.
+- [`LUA_AUTOMATION.md`](docs/LUA_AUTOMATION.md) — how the live mGBA automation harness works (Lua console scripting, macOS Accessibility, screenshotting) and its gotchas.
+- [`GHIDRA_WORKFLOW.md`](docs/GHIDRA_WORKFLOW.md) — how to set up and use Ghidra for the static-analysis side (install gotchas, importing/analyzing this ROM, next steps).
 
 ## Directory Structure
 
