@@ -53,85 +53,93 @@ full-card scans. A naive downscale will not match what the ROM expects — the
 illustration needs to be cropped out first, and the crop rectangle varies by
 card-frame era (old frame vs. newer frames have different border geometry).
 
-## Duel state lives in IWRAM, not EWRAM
+## Duel state: EWRAM after all (Session 3 conclusion retracted)
 
-**Verified empirically.** Captured 240 consecutive emulator frames of full
-EWRAM (`0x02000000`–`0x02040000`, every byte) spanning an entire opponent
-turn, including the duel actually ending (win/loss results screen appeared
-within the capture window). Every one of the 240 EWRAM snapshots was
-byte-for-byte identical, despite the visible game state changing completely.
-Conclusion: EWRAM in this build holds static data (card tables, text, menu
-assets); the *mutable* per-duel state (phase, turn owner, LP, hand/field
-contents, cursor position) lives in **IWRAM** (`0x03000000`–`0x03007FFF`,
-32KB) instead. Confirmed the opposite is true there: sampling IWRAM every
-frame shows real, frequent byte-level changes.
+**Session 3 concluded "duel state lives in IWRAM, not EWRAM". That is
+wrong.** Static disassembly (Session 4) shows game code reading *and
+writing* EWRAM duel structures constantly — e.g. the struct at
+`0x0201E2A0` has 442 literal-pool references in the first 3MB of ROM, with
+stores into it (`0x0802940C`: `str r0, [r2, #4]`; `0x080937E8` zeroes its
+first three words). A per-player block at `0x0201C4EC` with stride `0x868`
+is indexed by player number in the same code. This matches the EDS decomp,
+where every duel struct (`gDuel` `0x020192E0`, `gAiState` `0x02015EF0`,
+`gDuelCtrl` `0x02015EE8`, ...) is in EWRAM.
 
-This matters a lot practically: IWRAM is 32KB vs. EWRAM's 256KB, i.e. an 8x
-smaller haystack, which is why the turn-flag search below was tractable.
+Why the 240-frame EWRAM capture came out all-identical is **unknown**.
+Candidates, unranked because nothing distinguishes them yet: the capture
+script read a stale/cached buffer instead of fresh memory each frame;
+`emu:readRange` silently truncated or failed on a 256KB read; or the
+snapshots were written to the same file / compared wrongly. Anyone re-doing
+EWRAM captures should first sanity-check that two snapshots taken across a
+visible change (e.g. LP drop) actually differ.
 
-## Turn-owner / input-lock flag: strong candidate found
+IWRAM does change every frame — but much of what changes is `gMain`
+(`0x03000040`, same address as EDS): key state, frame counters, OAM/BG
+shadow buffers. That's system state, not duel state.
 
-**IWRAM offset `0x18F` (absolute address `0x0300018F`).**
+## `0x0300018F` is NOT a turn flag (retracted)
 
-Method: armed a Lua `callbacks:add('frame', ...)` hook that dumps all 32KB of
-IWRAM to a numbered file every single emulator frame (no stride — earlier
-attempts at 1-sample-per-2-or-3-frames missed the entire transition because
-the CPU opponent's whole turn resolves in under ~45 frames, well under a
-second). Captured 300 consecutive frames spanning: confirming my own End
-Phase → the opponent's entire turn → back to my own Draw Phase.
+Session 3's "turn-owner / input-lock flag" candidate is **disproven by
+disassembly**. `0x0300018F` is the high byte of a key-input bookkeeping
+field inside `gMain`, written by the game's `ReadKeys` routine.
 
-Per-offset transition analysis across those 300 frames found `0x18F` is the
-*only* byte in all of IWRAM with this exact clean pattern:
+`ReadKeys` is at **`0x080F4764`** (found via the only literal-pool hit for
+`KEYINPUT` `0x04000130` in code, at `0x080F47CC`). It reads `~KEYINPUT` and
+writes, relative to `gMain` = `0x03000040`:
 
-| Frames | Value | Game state |
-|---|---|---|
-| 1–32 | `252` (`0xFC`) | still resolving my End Phase |
-| 33–74 | `0` | opponent's entire turn (draw, main phase, attack) |
-| 75–300 | `252` | back to my turn (Draw Phase onward) |
+| Address | gMain+ | Type | Meaning (from the code) |
+|---|---|---|---|
+| `0x03000186` | `0x146` | u16 | held keys (`~KEYINPUT`) |
+| `0x03000188` | `0x148` | u16 | newly pressed (+ auto-repeat) |
+| `0x0300018A` | `0x14A` | u16 | newly released |
+| `0x0300018C` | `0x14C` | u16 | previous key state (repeat tracking) |
+| `0x0300018E` | `0x14E` | u16 | key state when auto-repeat last fired; set to `0` on any key change |
+| `0x03000190` | `0x150` | u16 | mask of keys that auto-repeat |
+| `0x03000192` | `0x152` | bitfield | bits 0-4 repeat counter, bits 5-9 repeat delay |
+| `0x03000193` | `0x153` | u8 | key-history ring index (history buffer follows at `0x194`) |
 
-A handful of other offsets (`0x186`, `0x188`, `0x18a`, `0x18c` — all nearby,
-suggestively part of the same struct) also flip near frame 32, but only for
-a single frame each (0→1→0 immediately) — those look like one-shot
-transition-event pulses (e.g. "a turn-change animation just started"), not
-the persistent state flag. `0x18F` is the one that stays at its new value for
-the entire duration of the side it represents.
+(Same layout family as EDS `gMain.heldKeys/newKeys/prevKeys/keyRepeatTimer`,
+just at a different offset inside `gMain`.)
 
-Likely semantics: `0xFC` = "it's your (the human player's) turn",
-`0x00` = "it's not" — a sentinel-style boolean rather than a literal 0/1,
-which is a common pattern in GBA-era C code (`if (turnFlag)` where the
-compiler was given a non-1 truthy constant by the original source, or the
-byte is reused for multiple purposes with 0xFC specifically meaning "player
-side active").
+Why the value is `0xFC` / `0`: `KEYINPUT` bits 10-15 are unused and read
+`0`, so `~KEYINPUT` always has them set — the high byte of any "full key
+state" u16 is `0xFC` when L/R aren't held. `0x0300018E` holds that full
+state after an auto-repeat fires, and is reset to `0` whenever the key
+state changes. So `0x18F` going `252 → 0 → 252` just means "key state
+changed, then stayed unchanged long enough to repeat". The other one-frame
+"pulses" at `0x186/0x188/0x18A/0x18C` were the A-press/release of the End
+Phase confirm. Inference (not verified) on why it stayed `0` for 42
+frames: either the harness changed key state again mid-window, or the game
+changes the repeat config during the CPU turn. Either way it carries no
+turn information, and the Session 3 live patch (force `0x18F = 252`) writes
+a field nothing else reads — a no-op.
 
-**Live patch installed (not yet proven causal — see below)**:
-```lua
-callbacks:add('frame', function()
-  if emu:read8(0x0300018F) == 0 then emu:write8(0x0300018F, 252) end
-end)
-```
-This fires correctly every time the flag would have dropped to 0 (confirmed
-via an incrementing counter in the same callback). **What's NOT yet
-confirmed**: whether forcing this byte actually re-enables field cursor
-navigation during the opponent's turn. Every attempt to test this by hand
-(press a direction key via the external automation harness, then screenshot)
-landed after the opponent's turn had already finished naturally — the AI
-turn is faster than a human-speed external test loop. The next step is to
-run the whole test (force + inject input + read back cursor position) inside
-a single Lua frame callback with no round-trip to the outside world, so it's
-frame-exact instead of reaction-time-exact. See `LUA_AUTOMATION.md` for the
-in-progress script for this.
+Static facts from the same function: `0x0300018E` is only *written* in
+`ReadKeys`; field input handlers read `0x03000186` (e.g. `0x080C3C26`:
+`ldrh` + `& 0x20` = Left, `& 0x10` = Right).
+
+## Turn-owner: new candidate (unverified)
+
+**`0x0201E2A4`** (u32 at `+4` of the EWRAM struct `0x0201E2A0`). Evidence,
+all static: it is compared against a loop's player index and XORed with
+`1` to get "the other player" (`0x080C3B7A`–`0x080C3B86`,
+`0x08095744`, `0x08095838`), and `(value & 1) * 0x868 + 0x0201C4EC`
+selects a per-player block — the same shape as EDS's
+`gDuel.turnPlayer` usage. Could also be "player currently being drawn/
+acted on" rather than turn owner; needs a live check (read it every frame
+across a turn change).
+
+## How the CPU turn probably works (inference from EDS, not WC06)
+
+In EDS the CPU's turn is a separate per-frame state machine
+(`AiRunTurn` → `gAiTurnPhases[gAiState.turnPhase]`, with `AiRunStep` as
+the main phase) that **replaces** the human field-cursor handler for the
+whole turn — there is no "input locked" flag to flip; the human cursor code
+simply isn't called. If WC06 is the same, opponent-turn navigation needs
+the field-cursor/view handler to be *called* during the CPU turn (a hook in
+the CPU-turn dispatcher), not one inverted branch.
 
 ### Not yet found
 
-- The cursor-position byte in IWRAM (needed to verify the patch, see above).
-- The actual ARM/Thumb instruction(s) in ROM that read `0x0300018F` — a raw
-  byte search for the address as a little-endian literal-pool constant
-  (`0xb2 0x01 0x00 0x03`) found 2 hits, but both are **not 4-byte-aligned**
-  (file offsets `0x1fd21` and `0x20179`, both `≡ 1 mod 4`), which a real
-  Thumb/ARM literal pool word can never be — both are almost certainly
-  coincidental byte patterns inside unrelated code or data, not real
-  references. The address is probably constructed arithmetically
-  (base-register + offset) rather than loaded as a raw literal, which means
-  finding the real reference needs proper disassembly from Ghidra (with
-  correct code/data separation), not a raw byte grep. See
-  `GHIDRA_WORKFLOW.md`.
+- WC06's equivalents of `AiRunTurn` / the human field-cursor handler.
+- The field cursor-position variable.

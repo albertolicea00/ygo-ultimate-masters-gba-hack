@@ -39,3 +39,16 @@ Also found and fixed a real blocker: macOS was denying the Accessibility
 permission to the terminal running the automation scripts the whole time,
 which explained most of Session 2's flakiness. Split the single findings log
 into topic docs per the user's request, instead of one growing file.
+
+## 2026-10-06 — Session 4
+
+Static pass with capstone instead of more live testing. **Disproved
+Session 3's turn flag**: found the game's `ReadKeys` (`0x080F4764`) and
+`0x0300018F` is the high byte of a key-repeat field in `gMain`; its `0xFC`
+is the always-set unused `KEYINPUT` bits. The live patch was a no-op.
+**Also retracted "duel state is in IWRAM"**: code reads/writes EWRAM duel
+structs constantly (as in EDS); why Session 3's EWRAM capture looked
+static is still unexplained. New, unverified turn-owner candidate
+`0x0201E2A4`. EDS suggests the CPU turn swaps out the human cursor handler
+entirely, so the eventual patch is probably a hook, not a branch flip.
+Added `tools/disasm_thumb.py`.

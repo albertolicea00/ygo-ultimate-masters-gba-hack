@@ -24,31 +24,30 @@ Remaining work, in order:
 
 ## 2. Opponent-turn field navigation
 
-**Status: flag candidate found, causal proof pending.**
+**Status: back to locating the turn state. Session 3's flag was wrong.**
 
-1. ✅ Confirmed live duel state lives in IWRAM (`0x03000000`, 32KB), not EWRAM.
-2. ✅ Found a strong candidate for the turn/input-lock flag: IWRAM `0x18F`
-   (absolute `0x0300018F`). Clean `252 → 0 → 252` transition exactly on the
-   turn boundaries across a 300-frame, every-frame capture. See
-   `MEMORY_FINDINGS.md` for the full evidence.
-3. ✅ Installed a live Lua frame-callback that forces this byte to `252`
-   whenever it reads `0`.
-4. ❌ **Not yet verified** that forcing the flag actually restores cursor
-   navigation during the opponent's turn. The CPU opponent's entire turn
-   resolves in well under a second, too fast for any human-speed
-   screenshot-then-keypress test loop to land inside the window and observe
-   anything meaningful.
-5. **Next action**: run the whole test inside one Lua frame-callback (force
-   the flag + inject a direction key + read back a cursor-position byte), no
-   round-trip to the outside world at all, so timing is frame-exact instead
-   of human-reaction-exact. See `LUA_AUTOMATION.md` for the harness and the
-   in-progress script (`cursor_diff_result.txt` test — first attempt didn't
-   produce output, needs debugging).
-6. Once confirmed: find the actual ARM/Thumb instruction in ROM that reads
-   `0x0300018F` and gates the d-pad handler on it (via Ghidra — see
-   `GHIDRA_WORKFLOW.md`), and turn the live memory-patch into a real
-   IPS/BPS ROM patch (likely just NOP-ing or inverting one conditional
-   branch).
+1. ❌ Retracted: "duel state lives in IWRAM". Code reads/writes EWRAM duel
+   structs (`0x0201E2A0`, `0x0201C4EC`) constantly, same as EDS.
+2. ❌ Retracted: `0x0300018F` as turn/input-lock flag. Disassembly of
+   `ReadKeys` (`0x080F4764`) shows it is the high byte of a key-repeat
+   field in `gMain`; `0xFC` is just the always-set unused `KEYINPUT` bits.
+   The live patch forcing it to `252` is a no-op. See `MEMORY_FINDINGS.md`.
+3. New turn-owner candidate (static only): `0x0201E2A4`.
+4. Working hypothesis (from EDS): the CPU turn runs its own per-frame state
+   machine instead of the human cursor handler, so there's probably no
+   single "lock" branch — the fix is likely a hook that also runs the
+   cursor/view handler during the CPU turn.
+5. **Next actions**, in order:
+   1. Live: log `0x0201E2A4` every frame across a turn change (one Lua
+      frame callback writing to a file — no human-speed loop needed, since
+      it's passive logging). Also sanity-check that EWRAM snapshots differ
+      across a visible change, to find out why Session 3's capture didn't.
+   2. Static: find WC06's CPU-turn dispatcher (`AiRunTurn` equivalent) and
+      the human field-cursor handler — readers of `0x03000188` (newKeys)
+      near readers of the turn-owner field are the place to start.
+   3. Decide the patch shape once both are known (hook vs. branch).
+6. Ghidra is still useful for xrefs, but `tools/disasm_thumb.py` (capstone)
+   was enough for everything in Session 4 — try it first, it's instant.
 
 ## Longer-term / not started
 

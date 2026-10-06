@@ -65,41 +65,30 @@ the project itself was lost to a `/tmp` cleanup before we got to use it for
 anything. Everything in `MEMORY_FINDINGS.md` about the `0x0300018F` flag was
 found via the *dynamic* (mGBA+Lua) side only.
 
-## The actual next task for Ghidra
+## Lighter alternative: capstone (`tools/disasm_thumb.py`)
 
-Once the project is (re-)built: find what code reads IWRAM address
-`0x0300018F` (the turn-flag candidate, see `MEMORY_FINDINGS.md`) and
-confirm it also gates the d-pad/cursor-movement handler specifically (not
-some unrelated consumer of the same byte).
+Session 4 found `ReadKeys` and retracted the `0x0300018F` turn-flag theory
+without Ghidra, in minutes: find aligned literal-pool words equal to a RAM
+address (`lit`), then disassemble around the loads that use them (`dis`).
+This ROM's code loads RAM addresses as literal-pool constants (or a struct
+base + small offset), so it works well. Its limit: no code/data separation
+or function boundaries, so literal pools disassemble as garbage, and there
+are false-positive literal hits inside data (anything past ~`0x08300000` is
+likely data). Use Ghidra when you need real xrefs / call graphs / the
+decompiler.
 
-A raw byte-grep of the ROM for `0x0300018F` as a little-endian 32-bit
-literal-pool constant (`b2 01 00 03`... wait, actually `8f 01 00 03`) found
-**2 hits, both at non-4-byte-aligned file offsets** — a real Thumb/ARM
-literal pool word can never be at an unaligned offset, so both hits are
-almost certainly coincidental byte patterns in unrelated code/data, not real
-references. This means the address is probably **constructed arithmetically**
-in the actual code (e.g. a base pointer like `0x03000180` or a register
-computed via `mov`/`lsl`/`add`, then a byte offset of `0xF` or `0x3`/`0xB`
-applied via the addressing mode) rather than loaded as one raw literal — so
-finding the real reference needs Ghidra's proper code/data-aware
-disassembly and xref engine, not a naive byte search (a naive linear
-disassembly pass also doesn't work well — tried once, it produces garbage
-because Thumb code is interspersed with literal-pool data that isn't
-instructions, and without knowing the real function boundaries you can't
-tell which bytes are which; this is exactly the problem Ghidra's analysis
-pass solves).
+Note: older docs said a raw grep for `0x0300018F` found 2 unaligned hits.
+That grep searched the wrong bytes (`b2 01 00 03` = `0x030001B2`); the
+correct little-endian bytes `8f 01 00 03` appear **nowhere** in the ROM.
+And `0x0300018F` turned out not to be a turn flag anyway (see
+`MEMORY_FINDINGS.md`).
 
-Suggested approach once the project exists:
-1. Import + analyze (46 min, see above).
-2. Use Ghidra's "Search → For Scalars" or a small Ghidra script
-   (Python/Java) to find every instruction whose computed effective address
-   equals `0x0300018F` (not just literal-pool hits) — this requires actual
-   constant-propagation/decompilation, which Ghidra does provide via its
-   decompiler, unlike a raw disassembly pass.
-3. For each hit, check (a) is it inside a function that also reads
-   `KEYINPUT`/handles the d-pad, and (b) does it feed a conditional branch
-   that would skip input handling when the byte is non-`0xFC`.
-4. Once confirmed, that conditional branch (likely a `BEQ`/`BNE` after a
-   `CMP`) is the actual patch target for a permanent IPS/BPS fix — instead
-   of forcing the RAM value every frame (the current live-patch approach),
-   you'd flip or NOP that one branch so the check never fails.
+## Next task for Ghidra
+
+Find WC06's CPU-turn dispatcher (EDS: `AiRunTurn`) and the human
+field-cursor handler. Import with the ROM base set so xrefs resolve:
+`-loader BinaryLoader -loader-baseAddr 0x08000000`, and add uninitialized
+memory blocks for EWRAM (`0x02000000`, `0x40000`), IWRAM (`0x03000000`,
+`0x8000`) and I/O (`0x04000000`, `0x400`) before analysis — without them,
+references into RAM have nowhere to point. (The Session 1 import did
+neither, as far as these docs record.)

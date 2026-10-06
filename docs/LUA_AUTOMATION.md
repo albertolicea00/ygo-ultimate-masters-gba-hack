@@ -191,31 +191,21 @@ card-detail view if a card happens to be selected, or does nothing on an
 empty zone. The L/R shoulder buttons do **nothing** for phase control
 (tried, confirmed no effect).
 
-## In-progress: fully in-Lua causal test (started, not finished)
+## Shelved: in-Lua causal test for `0x0300018F`
 
-Goal: prove the `0x18F` turn-flag patch (see `MEMORY_FINDINGS.md`) actually
-restores navigation, without any human-speed round trip. Draft state-machine
-callback (needs the cursor-position IWRAM byte identified first — not yet
-found cleanly, see `MEMORY_FINDINGS.md` "Not yet found"):
+The planned frame-exact test of the `0x18F` patch is moot: `0x0300018F`
+was shown by disassembly to be key-repeat bookkeeping, not a turn flag
+(`MEMORY_FINDINGS.md`). The technique still stands for the next candidate.
+Next live job is passive and needs no input injection — log the new
+candidate every frame to a file:
 ```lua
-luaCT_state=0; luaCT_frame=0; luaCT_base=nil; luaCT_after=nil
+luaTP_n=0; luaTP_f=io.open('/tmp/turnplayer_log.txt','w')
 callbacks:add('frame', function()
-  if luaCT_state==0 then
-    luaCT_base = emu:readRange(0x03000000,0x8000)
-    emu:setKeys(16)  -- Right
-    luaCT_state=1; luaCT_frame=0
-  elseif luaCT_state==1 then
-    luaCT_frame=luaCT_frame+1
-    if luaCT_frame>=6 then emu:setKeys(0); luaCT_state=2; luaCT_frame=0 end
-  elseif luaCT_state==2 then
-    luaCT_frame=luaCT_frame+1
-    if luaCT_frame>=10 then
-      luaCT_after = emu:readRange(0x03000000,0x8000)
-      -- diff luaCT_base vs luaCT_after, write result to a file
-      luaCT_state=3
-    end
-  end
+  if luaTP_n>=600 then if luaTP_f then luaTP_f:close(); luaTP_f=nil end return end
+  luaTP_n=luaTP_n+1
+  luaTP_f:write(string.format('%d %08x %04x\n', luaTP_n, emu:read32(0x0201E2A4), emu:read16(0x03000186)))
 end)
 ```
-First run produced no output file — needs debugging (check the Scripting
-console pane for a Lua error before assuming the file path is wrong).
+Arm it on your own Main Phase, then end the turn; the log covers ~10s.
+Untested — check the console pane for Lua errors before trusting an empty
+file. `/tmp` is a guess at a writable path; use any absolute path.
