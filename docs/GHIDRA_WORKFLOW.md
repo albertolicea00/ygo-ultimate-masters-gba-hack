@@ -83,12 +83,35 @@ correct little-endian bytes `8f 01 00 03` appear **nowhere** in the ROM.
 And `0x0300018F` turned out not to be a turn flag anyway (see
 `MEMORY_FINDINGS.md`).
 
+## Working import recipe (Session 4)
+
+A plain raw import only finds the ARM crt0. Analysis finished in ~2 min and
+had found almost no Thumb code. What works, with scripts in `tools/ghidra/`:
+
+```bash
+G=/opt/homebrew/Cellar/ghidra/<version>/libexec/support/analyzeHeadless
+P=~/ghidra_projects            # durable, no leading-dot path segment
+# 1. import with the real ROM base + RAM/IO blocks
+$G $P wct06 -import <rom> -processor ARM:LE:32:v4t \
+   -loader BinaryLoader -loader-baseAddr 0x08000000 \
+   -scriptPath tools/ghidra -preScript AddGbaRam.java
+# 2. seed Thumb functions (every BL target that starts with push {..,lr}),
+#    then let auto-analysis run over them
+$G $P wct06 -process trm-yum6.gba -scriptPath tools/ghidra -preScript SeedThumb.java
+# 3. decompile specific functions to a file
+DECOMP_OUT=/tmp/out.c DECOMP_ADDRS=0x08094cd4,0x080951cc \
+  $G $P wct06 -process trm-yum6.gba -noanalysis -readOnly \
+  -scriptPath tools/ghidra -postScript Decomp.java
+```
+`SeedThumb` clears the bogus ARM listing past `0x08001000` first.
+Otherwise setting the Thumb context fails with "Context register change
+conflicts with one or more instructions". Seeding found 2406 BL targets
+and created 665 new functions.
+
 ## Next task for Ghidra
 
-Find WC06's CPU-turn dispatcher (EDS: `AiRunTurn`) and the human
-field-cursor handler. Import with the ROM base set so xrefs resolve:
-`-loader BinaryLoader -loader-baseAddr 0x08000000`, and add uninitialized
-memory blocks for EWRAM (`0x02000000`, `0x40000`), IWRAM (`0x03000000`,
-`0x8000`) and I/O (`0x04000000`, `0x400`) before analysis — without them,
-references into RAM have nowhere to point. (The Session 1 import did
-neither, as far as these docs record.)
+Decompile the remaining duel-tick subsystems (`0x08093598`, `0x080A1658`,
+`0x080AB200`, `0x08095348`, `0x0804F2E0`) and the six phase handlers in
+`0x09E5AAC0`, to confirm the pause-and-browse design in
+`OPPONENT_TURN_NAVIGATION.md` has no hidden interaction with the CPU's
+phase handlers.

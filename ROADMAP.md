@@ -32,22 +32,19 @@ Remaining work, in order:
    `ReadKeys` (`0x080F4764`) shows it is the high byte of a key-repeat
    field in `gMain`; `0xFC` is just the always-set unused `KEYINPUT` bits.
    The live patch forcing it to `252` is a no-op. See `MEMORY_FINDINGS.md`.
-3. New turn-owner candidate (static only): `0x0201E2A4`.
-4. Working hypothesis (from EDS): the CPU turn runs its own per-frame state
-   machine instead of the human cursor handler, so there's probably no
-   single "lock" branch — the fix is likely a hook that also runs the
-   cursor/view handler during the CPU turn.
+3. ✅ (static) Mapped the duel loop: turn player `0x0201E1C8`, field
+   mode `0x0201E22C`, field cursor `0x02023340`, duel tick `0x08094CD4`.
+   There is no input-lock flag. The field screen just never gets switched
+   on during the CPU's turn. See `OPPONENT_TURN_NAVIGATION.md`.
+4. Proposed fix: **pause-and-browse**. During the CPU's turn, Select turns
+   on field mode 1. The game's own field screen runs and pauses the duel
+   logic while it's open, B (the native exit) resumes, and A is blocked.
 5. **Next actions**, in order:
-   1. Live: log `0x0201E2A4` every frame across a turn change (one Lua
-      frame callback writing to a file — no human-speed loop needed, since
-      it's passive logging). Also sanity-check that EWRAM snapshots differ
-      across a visible change, to find out why Session 3's capture didn't.
-   2. Static: find WC06's CPU-turn dispatcher (`AiRunTurn` equivalent) and
-      the human field-cursor handler — readers of `0x03000188` (newKeys)
-      near readers of the turn-owner field are the place to start.
-   3. Decide the patch shape once both are known (hook vs. branch).
-6. Ghidra is still useful for xrefs, but `tools/disasm_thumb.py` (capstone)
-   was enough for everything in Session 4 — try it first, it's instant.
+   1. Live-test the prototype `tools/opp_turn_browse.lua` (checklist in
+      `OPPONENT_TURN_NAVIGATION.md`).
+   2. If it holds, write the ~80-byte Thumb stub that replaces
+      `bl 0x080951CC` at `0x08094D26`, after verifying a free-space region.
+   3. Package as BPS/IPS.
 
 ## Longer-term / not started
 

@@ -22,6 +22,7 @@ See our [`ROADMAP.md`](ROADMAP.md) for the current status of both project goals 
 Write-ups, findings, and working techniques are stored in the `docs/` directory. **Read these before re-deriving something that may already be solved**:
 
 - [`MEMORY_FINDINGS.md`](docs/MEMORY_FINDINGS.md) — confirmed ROM/RAM facts: offsets, addresses, the turn-flag candidate, what's still unconfirmed.
+- [`OPPONENT_TURN_NAVIGATION.md`](docs/OPPONENT_TURN_NAVIGATION.md) — how the duel loop gates the field cursor, the address map, and the proposed pause-and-browse fix.
 - [`LUA_AUTOMATION.md`](docs/LUA_AUTOMATION.md) — how the live mGBA automation harness works (Lua console scripting, macOS Accessibility, screenshotting) and its gotchas.
 - [`GHIDRA_WORKFLOW.md`](docs/GHIDRA_WORKFLOW.md) — static analysis: Ghidra setup/gotchas, and the lighter capstone path (`tools/disasm_thumb.py`) that is usually enough.
 

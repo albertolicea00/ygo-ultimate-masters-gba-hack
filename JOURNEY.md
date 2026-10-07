@@ -52,3 +52,19 @@ static is still unexplained. New, unverified turn-owner candidate
 `0x0201E2A4`. EDS suggests the CPU turn swaps out the human cursor handler
 entirely, so the eventual patch is probably a hook, not a branch flip.
 Added `tools/disasm_thumb.py`.
+
+## 2026-10-07 — Session 5
+
+Static pass with capstone (plus Ghidra re-imported with proper base/RAM
+blocks and Thumb seeding). **Disproved Session 3's turn flag**: found the
+game's `ReadKeys` (`0x080F4764`), and `0x0300018F` is the high byte of a
+key-repeat field in `gMain`. The live patch was a no-op. **Also retracted
+"duel state is in IWRAM"**: the duel structs are in EWRAM, as in EDS. Then
+mapped the duel loop: per-frame tick `0x08094CD4`, phase table
+`0x09E5AAC0`, turn player `0x0201E1C8`, field mode `0x0201E22C`, field
+cursor `0x02023340`. There is no lock flag. The field screen just never
+gets switched on during the CPU's turn, and while it's on the duel logic
+pauses. Proposed fix: pause-and-browse (Select on the CPU's turn turns on
+field mode 1, B resumes, A blocked). Wrote a Lua prototype for it; it
+hasn't been run yet. Added `tools/disasm_thumb.py`, `tools/ghidra/`,
+`tools/opp_turn_browse.lua`, `docs/OPPONENT_TURN_NAVIGATION.md`.

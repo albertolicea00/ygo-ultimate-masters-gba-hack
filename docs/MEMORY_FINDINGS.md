@@ -118,28 +118,29 @@ Static facts from the same function: `0x0300018E` is only *written* in
 `ReadKeys`; field input handlers read `0x03000186` (e.g. `0x080C3C26`:
 `ldrh` + `& 0x20` = Left, `& 0x10` = Right).
 
-## Turn-owner: new candidate (unverified)
+## Duel loop, turn player, field cursor
 
-**`0x0201E2A4`** (u32 at `+4` of the EWRAM struct `0x0201E2A0`). Evidence,
-all static: it is compared against a loop's player index and XORed with
-`1` to get "the other player" (`0x080C3B7A`–`0x080C3B86`,
-`0x08095744`, `0x08095838`), and `(value & 1) * 0x868 + 0x0201C4EC`
-selects a per-player block — the same shape as EDS's
-`gDuel.turnPlayer` usage. Could also be "player currently being drawn/
-acted on" rather than turn owner; needs a live check (read it every frame
-across a turn change).
+Mapped in Session 4. Full write-up and address table:
+`OPPONENT_TURN_NAVIGATION.md`. Short version:
 
-## How the CPU turn probably works (inference from EDS, not WC06)
+- Turn player: **`0x0201E1C8`** (`& 1`). Every phase handler uses it as
+  the current player.
+- `0x0201E2A4` is **not** the turn owner. An earlier draft of this file
+  said it was. It is written once, at duel init, and holds this GBA's own
+  player index. `0x0201E2A8[2]` = controller type per player (inferred:
+  0 human, 1 CPU, 2 link).
+- Field cursor: u16 at **`0x02023340`** (bit 7 player, bits 0-6 area,
+  high byte index).
+- Field mode: **`0x0201E22C`**. While it's non-zero the field screen
+  runs and the duel logic pauses. Only the human path sets mode 1, so
+  nothing turns it on during the CPU's turn. That is the actual "lock".
 
-In EDS the CPU's turn is a separate per-frame state machine
-(`AiRunTurn` → `gAiTurnPhases[gAiState.turnPhase]`, with `AiRunStep` as
-the main phase) that **replaces** the human field-cursor handler for the
-whole turn — there is no "input locked" flag to flip; the human cursor code
-simply isn't called. If WC06 is the same, opponent-turn navigation needs
-the field-cursor/view handler to be *called* during the CPU turn (a hook in
-the CPU-turn dispatcher), not one inverted branch.
+The EDS comparison was useful for structure, but WC06 doesn't have a
+separate `AiRunTurn` path. The same phase handlers run for both players
+and branch on controller type inside.
 
 ### Not yet found
 
-- WC06's equivalents of `AiRunTurn` / the human field-cursor handler.
-- The field cursor-position variable.
+- What the other subsystems in the duel tick chain do (`0x08093598`,
+  `0x080A1658`, `0x080AB200`, `0x08095348`, `0x0804F2E0`).
+- Confirmed DP/SP/M1/BP/M2/EP order of the phase table `0x09E5AAC0`.

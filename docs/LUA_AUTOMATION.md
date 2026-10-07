@@ -193,19 +193,18 @@ empty zone. The L/R shoulder buttons do **nothing** for phase control
 
 ## Shelved: in-Lua causal test for `0x0300018F`
 
-The planned frame-exact test of the `0x18F` patch is moot: `0x0300018F`
-was shown by disassembly to be key-repeat bookkeeping, not a turn flag
-(`MEMORY_FINDINGS.md`). The technique still stands for the next candidate.
-Next live job is passive and needs no input injection — log the new
-candidate every frame to a file:
-```lua
-luaTP_n=0; luaTP_f=io.open('/tmp/turnplayer_log.txt','w')
-callbacks:add('frame', function()
-  if luaTP_n>=600 then if luaTP_f then luaTP_f:close(); luaTP_f=nil end return end
-  luaTP_n=luaTP_n+1
-  luaTP_f:write(string.format('%d %08x %04x\n', luaTP_n, emu:read32(0x0201E2A4), emu:read16(0x03000186)))
-end)
+The planned frame-exact test of the `0x18F` patch no longer matters.
+Disassembly showed `0x0300018F` is key-repeat bookkeeping, not a turn flag
+(`MEMORY_FINDINGS.md`).
+
+## Next live job: the pause-and-browse prototype
+
+`tools/opp_turn_browse.lua` (design and checklist in
+`OPPONENT_TURN_NAVIGATION.md`). Load it once a Free Duel is running:
 ```
-Arm it on your own Main Phase, then end the turn; the log covers ~10s.
-Untested — check the console pane for Lua errors before trusting an empty
-file. `/tmp` is a guess at a writable path; use any absolute path.
+run_lua.sh "dofile('/abs/path/to/tools/opp_turn_browse.lua')"
+```
+Then press Select during the CPU's turn. It logs to
+`/tmp/opp_turn_browse.log`. It uses `callbacks:add('keysRead', ...)` +
+`emu:clearKey` to block A. Both exist in mGBA 0.10.5 (checked against the
+binary's symbol strings), but neither has been exercised here yet.
