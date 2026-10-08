@@ -104,6 +104,45 @@ Why pause rather than browse while the CPU keeps playing:
 Out-of-turn actions must stay blocked. A opens the command menu and must be
 filtered while browsing on the CPU's turn.
 
+## Live validation (2026-10-08)
+
+Run against a live Free Duel (vs Kuriboh & Friends) with an in-Lua
+frame-exact harness (`tools/browse_diag.lua`; raw log
+`docs/_browse_diag_run.log`). No screenshot timing was involved — all reads,
+the mode write and the input injection happen inside frame callbacks, so the
+CPU's sub-second turn is fully observable.
+
+First, the address map was confirmed on the player's own turn:
+`turn=0, ctl0=0, ctl1=1, mode=1, localside=0` — i.e. controller 0 = human,
+**controller 1 = CPU (the inference was right)**, and field mode is 1 during
+your own turn. On ending the turn: `turn=1, mode=0` — field mode is 0 for the
+whole CPU turn, which is exactly why the cursor is dead.
+
+Then, forcing field mode 1 on the CPU's turn (the `SetFieldMode`-equivalent
+writes) and injecting Right edges, logged per frame:
+
+- **Pause works.** `phase` stayed frozen for the entire forced-browse window;
+  it only advanced (to the next phase) after mode was set back to 0.
+- **Resume works.** Setting mode 0 handed the turn back; the CPU finished and
+  play continued normally.
+- **Cursor moves.** Once the field task was running (`task=1`), each injected
+  Right moved the cursor: `000e → 000d → 000c → 0005`. The injected keys showed
+  up in `newKeys` (`0x0010`) as expected, so the normal input path is used.
+- **Startup delay.** For the first ~32 frames the field task had not started
+  yet (`task=0`) because a CPU animation was still in flight; the cursor held
+  still but the screen was already paused. The task started on its own and the
+  cursor became live. An earlier, cruder test checked too early (inside that
+  window) and wrongly concluded the cursor didn't move.
+- **No desync.** The duel ran coherently across ~4 turns of repeated
+  mode-forcing (LP, phases and prompts all normal, no softlock). The two side
+  fields `SetFieldMode` zeroes (`+0x1D54`, and the B-exit's `+0x1D5C`) caused no
+  observable trouble.
+
+So the pause-and-browse mechanism is proven on real hardware-accurate
+emulation. What remains for the prototype is only the trigger wiring (Select to
+engage, B the native exit, A blocked) — the same writes and input path already
+validated above.
+
 ### Step 1 — live prototype (no ROM change)
 
 `tools/opp_turn_browse.lua` does the above from Lua. It uses a `frame`

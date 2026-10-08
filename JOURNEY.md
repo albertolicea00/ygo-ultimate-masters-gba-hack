@@ -68,3 +68,17 @@ pauses. Proposed fix: pause-and-browse (Select on the CPU's turn turns on
 field mode 1, B resumes, A blocked). Wrote a Lua prototype for it; it
 hasn't been run yet. Added `tools/disasm_thumb.py`, `tools/ghidra/`,
 `tools/opp_turn_browse.lua`, `docs/OPPONENT_TURN_NAVIGATION.md`.
+
+## 2026-10-08 — Session 6
+
+**Live-validated the pause-and-browse mechanism** in a real Free Duel, using
+an in-Lua frame-exact harness (no screenshot timing). Confirmed the address
+map on the player's turn (controller 0 = human, 1 = CPU; field mode 1 during
+your turn, 0 during the CPU's). Then on the CPU's turn: forcing field mode 1
+froze the phase (pause works), injected Right moved the cursor once the field
+task started (`000e→000d→000c→0005`), and clearing mode handed the turn back
+(resume works). ~4 turns of repeated mode-forcing caused no desync. The only
+nuance is a ~0.5s startup delay before the cursor becomes live, while an
+in-progress CPU animation finishes. Evidence: `docs/_browse_diag_run.log`,
+harness `tools/browse_diag.lua`. Also spawned a subagent that wrote
+`docs/GAME_NAVIGATION.md` and `tools/nav.py` (menu-flow automation).

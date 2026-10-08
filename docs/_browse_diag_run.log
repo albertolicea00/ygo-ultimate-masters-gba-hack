@@ -1,0 +1,51 @@
+armed gen=1
+engaged mode=1
+f= 1 turn=1 mode=1 task=0 fstate=0 newkeys=0000 cursor=000e
+f= 2 turn=1 mode=1 task=0 fstate=0 newkeys=0010 cursor=000e
+f= 3 turn=1 mode=1 task=0 fstate=0 newkeys=0000 cursor=000e
+f= 4 turn=1 mode=1 task=0 fstate=0 newkeys=0000 cursor=000e
+f= 5 turn=1 mode=1 task=0 fstate=0 newkeys=0000 cursor=000e
+f= 6 turn=1 mode=1 task=0 fstate=0 newkeys=0000 cursor=000e
+f= 7 turn=1 mode=1 task=0 fstate=0 newkeys=0000 cursor=000e
+f= 8 turn=1 mode=1 task=0 fstate=0 newkeys=0010 cursor=000e
+f= 9 turn=1 mode=1 task=0 fstate=0 newkeys=0000 cursor=000e
+f=10 turn=1 mode=1 task=0 fstate=0 newkeys=0000 cursor=000e
+f=11 turn=1 mode=1 task=0 fstate=0 newkeys=0000 cursor=000e
+f=12 turn=1 mode=1 task=0 fstate=0 newkeys=0000 cursor=000e
+f=13 turn=1 mode=1 task=0 fstate=0 newkeys=0000 cursor=000e
+f=14 turn=1 mode=1 task=0 fstate=0 newkeys=0010 cursor=000e
+f=15 turn=1 mode=1 task=0 fstate=0 newkeys=0000 cursor=000e
+f=16 turn=1 mode=1 task=0 fstate=0 newkeys=0000 cursor=000e
+f=17 turn=1 mode=1 task=0 fstate=0 newkeys=0000 cursor=000e
+f=18 turn=1 mode=1 task=0 fstate=0 newkeys=0000 cursor=000e
+f=19 turn=1 mode=1 task=0 fstate=0 newkeys=0000 cursor=000e
+f=20 turn=1 mode=1 task=0 fstate=0 newkeys=0010 cursor=000e
+f=21 turn=1 mode=1 task=0 fstate=0 newkeys=0000 cursor=000e
+f=22 turn=1 mode=1 task=0 fstate=0 newkeys=0000 cursor=000e
+f=23 turn=1 mode=1 task=0 fstate=0 newkeys=0000 cursor=000e
+f=24 turn=1 mode=1 task=0 fstate=0 newkeys=0000 cursor=000e
+f=25 turn=1 mode=1 task=0 fstate=0 newkeys=0000 cursor=000e
+f=26 turn=1 mode=1 task=0 fstate=0 newkeys=0010 cursor=000e
+f=27 turn=1 mode=1 task=0 fstate=0 newkeys=0000 cursor=000e
+f=28 turn=1 mode=1 task=0 fstate=0 newkeys=0000 cursor=000e
+f=29 turn=1 mode=1 task=0 fstate=0 newkeys=0000 cursor=000e
+f=30 turn=1 mode=1 task=0 fstate=0 newkeys=0000 cursor=000e
+f=31 turn=1 mode=1 task=0 fstate=0 newkeys=0000 cursor=000e
+f=32 turn=1 mode=1 task=0 fstate=0 newkeys=0010 cursor=000e
+f=33 turn=1 mode=1 task=1 fstate=0 newkeys=0000 cursor=000d
+f=34 turn=1 mode=1 task=1 fstate=0 newkeys=0000 cursor=000d
+f=35 turn=1 mode=1 task=1 fstate=0 newkeys=0000 cursor=000d
+f=36 turn=1 mode=1 task=1 fstate=0 newkeys=0000 cursor=000d
+f=37 turn=1 mode=1 task=1 fstate=0 newkeys=0000 cursor=000d
+f=38 turn=1 mode=1 task=1 fstate=0 newkeys=0010 cursor=000c
+f=39 turn=1 mode=1 task=1 fstate=0 newkeys=0010 cursor=000c
+f=40 turn=1 mode=1 task=1 fstate=0 newkeys=0010 cursor=000c
+f=41 turn=1 mode=1 task=1 fstate=0 newkeys=0000 cursor=000c
+f=42 turn=1 mode=1 task=1 fstate=0 newkeys=0000 cursor=000c
+f=43 turn=1 mode=1 task=1 fstate=0 newkeys=0000 cursor=000c
+f=44 turn=1 mode=1 task=1 fstate=0 newkeys=0010 cursor=0005
+f=45 turn=1 mode=1 task=1 fstate=0 newkeys=0000 cursor=0005
+f=46 turn=1 mode=1 task=1 fstate=0 newkeys=0000 cursor=0005
+f=47 turn=1 mode=1 task=1 fstate=0 newkeys=0000 cursor=0005
+f=48 turn=1 mode=1 task=1 fstate=0 newkeys=0000 cursor=0005
+exit mode=0

@@ -10,8 +10,17 @@
 -- carries on. A is stripped so the command menu (summon/set/activate) can't
 -- open out of turn.
 --
--- All addresses are from static analysis only (docs/OPPONENT_TURN_NAVIGATION.md).
--- UNTESTED. Load it only on a save you don't mind losing.
+-- Addresses from static analysis, then validated live (see
+-- docs/OPPONENT_TURN_NAVIGATION.md "Live validation"). The mechanism is proven:
+-- forcing field mode 1 during the CPU's turn pauses the duel logic and lets the
+-- field cursor move. NOTE: the cursor only becomes movable once the field task
+-- actually starts, which waits for any CPU animation already in progress to
+-- finish (~0.5s). Until then the screen is paused but the cursor is still. This
+-- is expected, not a bug.
+--
+-- Do NOT re-assert mode=1 every frame: pressing B makes the game's own exit set
+-- mode=0, and that is how we detect the player wants out. Re-asserting would
+-- trap them in browse mode.
 
 local DUEL        = 0x0201C4E0 -- big duel struct (per-player blocks at +0xC, stride 0x868)
 local TURN_PLAYER = 0x0201E1C8 -- u32, & 1 = player whose turn it is
