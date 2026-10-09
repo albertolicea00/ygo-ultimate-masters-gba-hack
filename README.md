@@ -23,7 +23,9 @@ Objective 2 (navigate during the opponent's turn) is **done and shipped** as a
 ROM patch: [`patch/oppnav.ips`](patch/oppnav.ips). Apply it to a clean
 `trm-yum6.gba`, then press **Select** on the CPU's turn to browse the field.
 See **[`docs/PATCH_GUIDE.md`](docs/PATCH_GUIDE.md)** (apply / play / rebuild /
-test / internals) and the [quickstart](patch/README.md). Build:
+test / internals) and the patch [quickstart](patch/README.md). For putting the
+patched ROM on an Android/iOS phone, see the
+[phone install guide](.workspace/output/README.md). Build:
 `python3 tools/build_patch.py`. Tests: `python3 tests/test_patch.py`.
 
 ## Documentation
