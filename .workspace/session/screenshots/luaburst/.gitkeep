@@ -1,0 +1,9 @@
+# session/screenshots/luaburst/
+# Per-frame captures written from inside an mGBA Lua frame callback, kept out
+# of version control (regenerated on demand).
+#
+# Expected contents (gitignored — not committed):
+#   cur<frame>.bin  one dump per emulator frame (e.g. the cursor/IWRAM region),
+#                   for frame-exact analysis of fast events like the CPU's turn,
+#                   which a human-speed screenshot loop misses. See
+#                   docs/LUA_AUTOMATION.md and docs/OPPONENT_TURN_NAVIGATION.md.

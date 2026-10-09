@@ -1,0 +1,8 @@
+# session/screenshots/burst/
+# Raw memory-burst captures from the live mGBA harness, kept out of version
+# control (regenerated on demand).
+#
+# Expected contents (gitignored — not committed):
+#   snap_<n>.bin   consecutive raw RAM dumps (one file per sampled frame),
+#                  used to diff memory across an event (e.g. end-of-turn) and
+#                  find the byte(s) that change. See docs/LUA_AUTOMATION.md.
