@@ -4,9 +4,39 @@
 *.sgm
 *.ss0
 
-# Workspace and temporary files
+# Workspace and temporary files — ignored by default, but keep a small tracked
+# skeleton: the readme, the phone install guide, the harness scripts, and a few
+# directory placeholders.
 .workspace/*
 !.workspace/README.md
+
+# output/: just the install guide
+!.workspace/output/
+.workspace/output/*
+!.workspace/output/README.md
+
+# empty-dir placeholders (their contents stay ignored)
+!.workspace/game/
+.workspace/game/*
+!.workspace/game/.gitkeep
+!.workspace/refs/
+.workspace/refs/*
+!.workspace/refs/.gitkeep
+
+# session/: track the automation scripts + two screenshot-dir placeholders
+!.workspace/session/
+.workspace/session/*
+!.workspace/session/scripts/
+!.workspace/session/scripts/**
+!.workspace/session/screenshots/
+.workspace/session/screenshots/*
+!.workspace/session/screenshots/burst/
+.workspace/session/screenshots/burst/*
+!.workspace/session/screenshots/burst/.gitkeep
+!.workspace/session/screenshots/luaburst/
+.workspace/session/screenshots/luaburst/*
+!.workspace/session/screenshots/luaburst/.gitkeep
+
 scratch/
 tmp/
 execution
