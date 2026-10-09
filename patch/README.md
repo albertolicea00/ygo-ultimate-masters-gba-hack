@@ -20,9 +20,17 @@ During the opponent's turn, press **Select**. The field cursor appears and the
 opponent's turn pauses while you browse:
 
 - **D-pad** — move the cursor over any zone, both sides of the field.
-- **Start** — view the selected card's detail.
+- **Start** — **inspect the selected card** (full art + text). This is how you
+  look at cards while browsing.
 - **B** — stop browsing; the opponent's turn resumes.
 - **A is intentionally blocked** while browsing, so you can't act out of turn.
+
+**Inspecting cards = Start, not A.** On your own turn, A opens a card's *command
+menu* (summon / set / activate — and the magnifying-glass "inspect" option lives
+inside it). That menu also holds the play actions, so the patch blocks A entirely
+to stop you acting out of turn. We did **not** wire A to open only the inspect
+view, because **Start already shows the full card** — that was enough, and it
+keeps the patch simple and safe.
 
 There is a ~0.5 s delay after pressing Select before the cursor appears, while
 any animation the CPU was mid-way through finishes. This is expected.

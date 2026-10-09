@@ -54,9 +54,11 @@ The whole point of the patch: **move around during the opponent's turn**.
 1. When it's the opponent's (CPU's) turn, press **Select**.
 2. The cursor appears and the opponent's turn **pauses**.
 3. Move the cursor with the **D-pad** (you can see the whole field, both sides).
-4. **Start** → view a card's detail.
+4. **Start** → inspect a card (full art + text). **Use Start to look at cards,
+   not A.**
 5. **B** → leave; the opponent's turn resumes.
-6. **A is blocked on purpose** (you can't play cards out of turn).
+6. **A is blocked on purpose** (A opens the play menu — summon/set/activate — so
+   it's blocked to stop you acting out of turn; Start already covers inspecting).
 
 Note: after pressing Select there's a ~half-second wait before the cursor shows,
 while the animation the CPU was in the middle of finishes. That's normal.

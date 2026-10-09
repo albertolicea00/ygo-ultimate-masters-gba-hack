@@ -104,6 +104,14 @@ Why pause rather than browse while the CPU keeps playing:
 Out-of-turn actions must stay blocked. A opens the command menu and must be
 filtered while browsing on the CPU's turn.
 
+**Card inspection is on Start, A stays fully blocked (by choice).** The field
+handler already gives card inspection two ways: Start (state 3, card detail) and
+the magnifying-glass "inspect" item inside the A command menu. Since Start
+already shows the full card, the patch blocks A wholesale rather than allowing
+only the inspect item — allowing one menu item while filtering summon/set/
+activate would be extra logic for no user-visible gain. So inspection works
+during the CPU's turn; it is just mapped to Start.
+
 ## Live validation (2026-10-08)
 
 Run against a live Free Duel (vs Kuriboh & Friends) with an in-Lua

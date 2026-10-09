@@ -69,9 +69,17 @@ Load the patched ROM in any GBA emulator (tested on mGBA 0.10.5). During the
 |---|---|
 | **Select** | start browsing — the cursor appears, the CPU's turn pauses |
 | **D-pad**  | move the cursor over any zone, both sides of the field |
-| **Start**  | view the highlighted card's detail |
+| **Start**  | **inspect the highlighted card** (full art + text) |
 | **B**      | stop browsing — the CPU's turn resumes |
 | **A**      | intentionally blocked (you cannot act out of turn) |
+
+**To inspect a card, press Start — not A.** On your own turn A opens the card's
+*command menu* (summon / set / activate; the magnifying-glass "inspect" option is
+one item inside it). Because that menu also contains the play actions, the patch
+blocks A entirely so you can't act out of turn. It deliberately does **not** wire
+A to open just the inspect view — `Start` already shows the whole card, which was
+enough, and allowing only one item of A's menu would mean extra logic for no real
+gain. So: inspection works, it's just on `Start`.
 
 There is a ~0.5 s pause after Select before the cursor appears, while any
 animation the CPU was mid-way through finishes. The turn is already frozen then;
