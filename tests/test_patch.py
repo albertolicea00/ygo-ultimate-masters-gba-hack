@@ -40,18 +40,26 @@ class Skip(Exception):
     pass
 
 
+def skip(msg):
+    """Skip in a way both the plain runner and pytest understand."""
+    if 'pytest' in sys.modules:              # only true when running under pytest
+        import pytest
+        pytest.skip(msg)
+    raise Skip(msg)
+
+
 def _need_bp():
     if not HAVE_BP:
-        raise Skip('keystone/capstone not importable: %s' % BP_ERR)
+        skip('keystone/capstone not importable: %s' % BP_ERR)
 
 
 def _clean_rom():
     _need_bp()
     if not os.path.exists(ROM_PATH):
-        raise Skip('base ROM not present at %s' % ROM_PATH)
+        skip('base ROM not present at %s' % ROM_PATH)
     data = open(ROM_PATH, 'rb').read()
     if zlib.crc32(data) & 0xFFFFFFFF != CLEAN_CRC:
-        raise Skip('ROM at %s is not the expected base (CRC mismatch)' % ROM_PATH)
+        skip('ROM at %s is not the expected base (CRC mismatch)' % ROM_PATH)
     return data
 
 

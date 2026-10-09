@@ -37,3 +37,7 @@ field screen then opens and, because it reports "busy", the duel logic pauses
 until you leave with B.
 
 Rebuild from source: `python3 ../tools/build_patch.py` (needs keystone-engine).
+Tests: `python3 ../tests/test_patch.py`.
+
+**Full guide** (patchers step-by-step, controls, rebuild, tests, internals,
+troubleshooting): `../docs/PATCH_GUIDE.md`.
