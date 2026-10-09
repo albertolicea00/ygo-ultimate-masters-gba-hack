@@ -17,19 +17,31 @@ See our [`ROADMAP.md`](ROADMAP.md) for the current status of both project goals 
 - **[Ghidra](https://ghidra-sre.org/)**: Used for static analysis and ROM disassembly (ARM/Thumb architecture).
 - **[Python](https://www.python.org/)**: Scripts for image processing, ROM manipulation, and debugging automation.
 
+## The patch
+
+Objective 2 (navigate during the opponent's turn) is **done and shipped** as a
+ROM patch: [`patch/oppnav.ips`](patch/oppnav.ips). Apply it to a clean
+`trm-yum6.gba`, then press **Select** on the CPU's turn to browse the field.
+See **[`docs/PATCH_GUIDE.md`](docs/PATCH_GUIDE.md)** (apply / play / rebuild /
+test / internals) and the [quickstart](patch/README.md). Build:
+`python3 tools/build_patch.py`. Tests: `python3 tests/test_patch.py`.
+
 ## Documentation
 
 Write-ups, findings, and working techniques are stored in the `docs/` directory. **Read these before re-deriving something that may already be solved**:
 
+- [`PATCH_GUIDE.md`](docs/PATCH_GUIDE.md) — how to apply, use, rebuild and test the opponent-turn patch; and how it works.
 - [`MEMORY_FINDINGS.md`](docs/MEMORY_FINDINGS.md) — confirmed ROM/RAM facts: offsets, addresses, the turn-flag candidate, what's still unconfirmed.
-- [`OPPONENT_TURN_NAVIGATION.md`](docs/OPPONENT_TURN_NAVIGATION.md) — how the duel loop gates the field cursor, the address map, and the proposed pause-and-browse fix.
+- [`OPPONENT_TURN_NAVIGATION.md`](docs/OPPONENT_TURN_NAVIGATION.md) — how the duel loop gates the field cursor, the full address map, the shipped patch, and the live validation.
 - [`LUA_AUTOMATION.md`](docs/LUA_AUTOMATION.md) — how the live mGBA automation harness works (Lua console scripting, macOS Accessibility, screenshotting) and its gotchas.
 - [`GHIDRA_WORKFLOW.md`](docs/GHIDRA_WORKFLOW.md) — static analysis: Ghidra setup/gotchas, and the lighter capstone path (`tools/disasm_thumb.py`) that is usually enough.
 
 ## Directory Structure
 
 - `.workspace/`: Temporary files, working ROMs, and reference repositories (e.g., decompilations). *Not versioned*.
-- `tools/`: Utility scripts created during the reverse engineering process.
+- `tools/`: Utility scripts created during the reverse engineering process (incl. `build_patch.py`).
+- `tests/`: Automated tests for the patch builder.
+- `patch/`: The shipped IPS patch and its quickstart.
 - `docs/`: Technical documentation and write-ups.
 
 ---
