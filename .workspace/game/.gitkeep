@@ -1,0 +1,10 @@
+# game/
+# The target ROM and its battery save, kept out of version control.
+#
+# Expected contents (gitignored — not committed):
+#   trm-yum6.gba   base ROM (Yu-Gi-Oh! Ultimate Masters / WC06), 32 MB,
+#                  clean CRC32 0xF968A196
+#   trm-yum6.sav   in-game SRAM save (profile, decks, progress)
+#   *.zip          original archive the ROM was extracted from
+#
+# Place a clean trm-yum6.gba here to run the tools and build the patch.
