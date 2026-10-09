@@ -30,14 +30,16 @@ from keystone import Ks, KS_ARCH_ARM, KS_MODE_THUMB
 from capstone import Cs, CS_ARCH_ARM, CS_MODE_THUMB
 
 ROM_BASE = 0x08000000
-# Hook the FIRST bl of the duel tick (`bl 0x08093598` at 0x08094D1C). That call
-# runs every frame the tick runs — unlike the later `bl 0x080951CC`, which is
-# gated behind a busy-check and is often skipped during the CPU's turn. The
-# stub does its work, then tail-calls 0x08093598 (which takes no args and sets
-# its own r0, so clobbering r0-r3 is safe) so its return still drives the
-# tick's busy-check.
-HOOK_ADDR = 0x08094D1C
-ORIG_TARGET = 0x08093598
+# The duel-tick function (0x08094CD4) is invoked every frame through a
+# function-pointer table: the dispatcher at 0x08094DAC reads table[subState]
+# (table base 0x09E5AADC) and calls it via the trampoline 0x0810E5C8. We
+# repoint table[1] (at 0x09E5AAE0, originally 0x08094CD5) to our stub, so the
+# stub runs at the very top of every duel frame — before the tick's internal
+# gates that otherwise skip the field-cursor chain during the CPU's turn. The
+# stub then tail-calls the real tick (0x08094CD5), preserving its return value.
+# (Hooking the tick's inner `bl`s does not work: they sit behind those gates.)
+TABLE_PTR = 0x09E5AAE0      # table[1]; holds 0x08094CD5
+ORIG_TARGET = 0x08094CD4    # the real duel tick the stub tail-calls
 STUB_ADDR = 0x0800F700      # aligned, inside a 0x6C1-byte zero run; unreferenced
 
 HERE = os.path.dirname(os.path.abspath(__file__))
@@ -106,10 +108,7 @@ Lorig:    .word %d
 def assemble():
     ks = Ks(KS_ARCH_ARM, KS_MODE_THUMB)
     stub, _ = ks.asm(STUB_SRC, STUB_ADDR)
-    stub = bytes(stub)
-    hook, _ = ks.asm('bl #0x%X' % STUB_ADDR, HOOK_ADDR)
-    hook = bytes(hook)
-    return stub, hook
+    return bytes(stub)
 
 
 def verify_thumb1(stub):
@@ -145,40 +144,82 @@ def make_ips(changes):
 
 def main():
     rom = bytearray(open(ROM, 'rb').read())
-    stub, hook = assemble()
+    stub = assemble()
     bx_off = verify_thumb1(stub)
-    print('stub %d bytes (code %d + pool), hook %d bytes' %
-          (len(stub), bx_off, len(hook)))
+    print('stub %d bytes (code %d + pool)' % (len(stub), bx_off))
 
-    # sanity: the hook site really is the original bl to ORIG_TARGET
-    md = Cs(CS_ARCH_ARM, CS_MODE_THUMB)
-    orig = list(md.disasm(bytes(rom[HOOK_ADDR - ROM_BASE:HOOK_ADDR - ROM_BASE + 4]),
-                          HOOK_ADDR))[0]
-    assert orig.mnemonic == 'bl' and int(orig.op_str.lstrip('#'), 16) == ORIG_TARGET, \
-        'hook site is not `bl 0x%X` (found %s %s)' % (ORIG_TARGET, orig.mnemonic, orig.op_str)
+    # sanity: table[1] really holds ORIG_TARGET|1
+    t = TABLE_PTR - ROM_BASE
+    cur = struct.unpack_from('<I', rom, t)[0]
+    assert cur == (ORIG_TARGET | 1), \
+        'table[1] is 0x%08X, expected 0x%08X' % (cur, ORIG_TARGET | 1)
 
     # sanity: stub region is free (all zero) and long enough
     s = STUB_ADDR - ROM_BASE
     assert all(b == 0 for b in rom[s:s + len(stub)]), 'stub region not empty'
 
-    # apply
+    # apply: write stub, repoint table[1] -> stub (Thumb)
     rom[s:s + len(stub)] = stub
-    h = HOOK_ADDR - ROM_BASE
-    rom[h:h + len(hook)] = hook
-
-    # verify applied
-    newhook = list(md.disasm(bytes(rom[h:h + 4]), HOOK_ADDR))[0]
-    print('hook now: %08x %s %s' % (newhook.address, newhook.mnemonic, newhook.op_str))
-    assert newhook.mnemonic == 'bl' and int(newhook.op_str.lstrip('#'), 16) == STUB_ADDR
+    struct.pack_into('<I', rom, t, STUB_ADDR | 1)
+    print('table[1] now: 0x%08X' % struct.unpack_from('<I', rom, t)[0])
 
     os.makedirs(OUTDIR, exist_ok=True)
     out_rom = os.path.join(OUTDIR, 'trm-yum6-oppnav.gba')
     open(out_rom, 'wb').write(rom)
-    ips = make_ips([(s, stub), (h, hook)])
-    out_ips = os.path.join(OUTDIR, 'oppnav.ips')
-    open(out_ips, 'wb').write(ips)
     print('wrote', out_rom)
-    print('wrote', out_ips, '(%d bytes)' % len(ips))
+
+    # IPS can only address the first 16 MiB; the table pointer is past that, so
+    # IPS cannot represent this patch. Emit a BPS instead (handles any offset).
+    changes = [(s, stub), (t, struct.pack('<I', STUB_ADDR | 1))]
+    if all(off < 0x1000000 for off, _ in changes):
+        open(os.path.join(OUTDIR, 'oppnav.ips'), 'wb').write(make_ips(changes))
+        print('wrote oppnav.ips')
+    else:
+        src = open(ROM, 'rb').read()
+        open(os.path.join(OUTDIR, 'oppnav.bps'), 'wb').write(make_bps(src, bytes(rom)))
+        print('wrote oppnav.bps (patch offset past 16 MiB -> BPS, not IPS)')
+
+
+def make_bps(src, dst):
+    """Minimal BPS: whole target as literal TargetRead chunks. Valid and simple."""
+    import zlib
+
+    def varint(n):
+        out = bytearray()
+        while True:
+            x = n & 0x7F
+            n >>= 7
+            if n == 0:
+                out.append(0x80 | x)
+                break
+            out.append(x)
+            n -= 1
+        return bytes(out)
+
+    assert len(src) == len(dst), 'BPS diff assumes same length'
+    body = bytearray(b'BPS1')
+    body += varint(len(src))
+    body += varint(len(dst))
+    body += varint(0)                     # no metadata
+    # Walk the output: SourceRead (action 0) over runs equal to source,
+    # TargetRead (action 1) over runs that differ.
+    i, n = 0, len(dst)
+    while i < n:
+        same = src[i] == dst[i]
+        j = i + 1
+        while j < n and (src[j] == dst[j]) == same:
+            j += 1
+        length = j - i
+        if same:
+            body += varint(((length - 1) << 2) | 0)       # SourceRead
+        else:
+            body += varint(((length - 1) << 2) | 1)       # TargetRead
+            body += dst[i:j]
+        i = j
+    body += struct.pack('<I', zlib.crc32(src) & 0xFFFFFFFF)
+    body += struct.pack('<I', zlib.crc32(dst) & 0xFFFFFFFF)
+    body += struct.pack('<I', zlib.crc32(bytes(body)) & 0xFFFFFFFF)
+    return bytes(body)
 
 
 if __name__ == '__main__':
