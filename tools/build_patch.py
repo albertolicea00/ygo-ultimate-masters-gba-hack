@@ -50,6 +50,10 @@ OUTDIR = os.path.join(ROOT, '.workspace', 'output')
 STUB_SRC = '''
 .thumb
 start:
+    ldr  r0, Lmark           /* DEBUG marker: count stub executions */
+    ldrb r1, [r0]
+    adds r1, #1
+    strb r1, [r0]
     ldr  r0, Lturn
     ldr  r0, [r0]
     lsls r0, r0, #31
@@ -101,6 +105,7 @@ L1d58:    .word 0x0201E238
 L1d7c:    .word 0x0201E25C
 Llocal:   .word 0x0201E2A4
 L1d64:    .word 0x0201E244
+Lmark:    .word 0x03007F00
 Lorig:    .word %d
 ''' % (ORIG_TARGET | 1)
 
