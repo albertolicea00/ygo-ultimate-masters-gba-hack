@@ -27,6 +27,11 @@ opponent's turn pauses while you browse:
 There is a ~0.5 s delay after pressing Select before the cursor appears, while
 any animation the CPU was mid-way through finishes. This is expected.
 
+> ⚠️ **Single-player only (vs the CPU).** Tested and designed for duels against
+> the AI. Link / PvP multiplayer is **untested** and not recommended: browsing
+> pauses the duel logic, so in a 2-player link duel it could pause or desync the
+> other player's screen. Use it only in single-player for now.
+
 ## How it works
 
 See `../docs/OPPONENT_TURN_NAVIGATION.md`. In short: the game never turns on the

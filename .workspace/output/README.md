@@ -4,9 +4,6 @@ This folder has **`trm-yum6-oppnav.gba`**: Yu-Gi-Oh! Ultimate Masters with the
 patch already baked in. That file IS the ready-to-play game. You don't need to
 patch anything else.
 
-(There's a copy with an easy name on your Desktop:
-`YuGiOh-UltimateMasters-PARCHEADO.gba`. Same file.)
-
 - CRC32 of this file: `0xE0C3D7F0` (use it to confirm you have the right one).
 
 ---
@@ -63,6 +60,11 @@ The whole point of the patch: **move around during the opponent's turn**.
 
 Note: after pressing Select there's a ~half-second wait before the cursor shows,
 while the animation the CPU was in the middle of finishes. That's normal.
+
+> ⚠️ **Single-player only (vs the CPU).** This was made and tested for duels
+> against the AI. **Link / PvP multiplayer is untested** — browsing pauses the
+> duel, so it could freeze or desync the other player's screen. Don't use it in
+> link PvP for now.
 
 ---
 

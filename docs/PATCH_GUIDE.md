@@ -77,6 +77,13 @@ There is a ~0.5 s pause after Select before the cursor appears, while any
 animation the CPU was mid-way through finishes. The turn is already frozen then;
 only the cursor is waiting. This is expected.
 
+> ⚠️ **Single-player only (vs the CPU) — link/PvP untested.** The patch was
+> designed and validated for duels against the AI. In a link (2-player) duel the
+> opponent is a different controller type, so the stub likely won't trigger on
+> their turn — but this is **untested**, and because browsing pauses the duel
+> logic there is a real risk it would pause or desync the other player's screen.
+> Don't rely on it in link PvP until someone tests it.
+
 ---
 
 ## 4. Rebuild from source
