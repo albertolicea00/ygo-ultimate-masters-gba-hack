@@ -108,7 +108,7 @@ filtered while browsing on the CPU's turn.
 
 Run against a live Free Duel (vs Kuriboh & Friends) with an in-Lua
 frame-exact harness (`tools/browse_diag.lua`; raw log
-`docs/_browse_diag_run.log`). No screenshot timing was involved — all reads,
+`docs/browse_diag_run.log`). No screenshot timing was involved — all reads,
 the mode write and the input injection happen inside frame callbacks, so the
 CPU's sub-second turn is fully observable.
 
