@@ -4,12 +4,17 @@ This project is a romhack for the GBA game *Yu-Gi-Oh! World Championship Tournam
 
 ## Project Goals
 
-1. **Graphic Modification (SD/HD Cards):**
-   - Replace the original card graphics in the ROM with higher-quality versions downscaled from an external source. (Target format: 72x80, 6bpp indexed, 64 colors).
-2. **Gameplay Logic Modification (Opponent Turn Navigation):**
-   - Enable the ability to navigate the field and view cards while the opponent is taking their turn. This requires reverse engineering and patching the main duel loop logic.
+1. **Gameplay Logic Modification (Opponent Turn Navigation):** ✅ **done — shipped as [`patch/oppnav.ips`](patch/oppnav.ips)**
+   - Navigate the field and view cards while the opponent is taking their turn. Reverse-engineered and patched the duel loop; press **Select** on the CPU's turn to browse. See the [patch section below](#the-patch).
+2. ~~**Graphic Modification (SD/HD Cards):**~~ ❌ **(dropped — see below)**
+   - ~~Replace the original card graphics in the ROM with higher-quality versions downscaled from an external source. (Target format: 72x80, 6bpp indexed, 64 colors).~~
+   - **Why dropped:** we focused on goal 1 (which is now shipped), and this one is a bigger, separate pipeline with blockers still open. The approach is clear and feasible in principle — pull each card's illustration at higher quality, crop it to the in-game art rectangle, re-encode to the GBA's format, and write it back over the originals. But it is *not* a quick win:
+     - **The art block was never located.** Its real ROM offset is still unknown; naive scans failed, and the format (72×80, 6bpp, 64-colour palette) is only a hypothesis carried over from a sibling engine, not confirmed against this ROM. It needs a Ghidra xref-trace from the card-ID table. See [`docs/MEMORY_FINDINGS.md`](docs/MEMORY_FINDINGS.md).
+     - **Memory/space is the real risk.** This ROM is the full 32 MB with no free padding (the same wall we hit placing the opponent-turn patch). Higher-quality art only fits if each card re-encodes to the *same or smaller* byte size; anything bigger needs relocation and pointer fix-ups, which is a lot more work.
+     - **The crop differs per card era.** WC06 shows illustration-only art; our source scans are full cards, and the illustration rectangle varies by frame generation, so a plain downscale won't line up.
+   - So: doable, worth doing later, but a real project of its own — not abandoned for being impossible.
 
-See our [`ROADMAP.md`](ROADMAP.md) for the current status of both project goals and the concrete next step for each.
+See the [`ROADMAP.md`](ROADMAP.md) for the current status of both project goals and the concrete next step for each.
 
 ## Tools Used
 
