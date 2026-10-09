@@ -147,11 +147,15 @@ def make_ips(changes):
     return bytes(out)
 
 
-def main():
-    rom = bytearray(open(ROM, 'rb').read())
+def build_patched(clean):
+    """Return (patched_bytes, ips_bytes, changes) for a clean ROM (bytes).
+
+    changes is a list of (file_offset, bytes) for the stub and the hook. Raises
+    AssertionError if the clean ROM doesn't look like the expected base ROM.
+    """
+    rom = bytearray(clean)
     stub, hook = assemble()
-    code_len = verify(stub)
-    print('stub %d bytes (code %d + pool), hook %d bytes' % (len(stub), code_len, len(hook)))
+    verify(stub)
 
     md = Cs(CS_ARCH_ARM, CS_MODE_THUMB)
     orig = list(md.disasm(bytes(rom[HOOK_ADDR - ROM_BASE:HOOK_ADDR - ROM_BASE + 4]), HOOK_ADDR))[0]
@@ -166,13 +170,20 @@ def main():
     rom[h:h + len(hook)] = hook
 
     newhook = list(md.disasm(bytes(rom[h:h + 4]), HOOK_ADDR))[0]
-    print('hook now: %08x %s %s' % (newhook.address, newhook.mnemonic, newhook.op_str))
     assert newhook.mnemonic == 'bl' and int(newhook.op_str.lstrip('#'), 16) == STUB_ADDR
 
+    changes = [(s, stub), (h, hook)]
+    return bytes(rom), make_ips(changes), changes
+
+
+def main():
+    clean = open(ROM, 'rb').read()
+    patched, ips, changes = build_patched(clean)
+    print('stub+hook applied: %d bytes changed' % sum(len(d) for _, d in changes))
     os.makedirs(OUTDIR, exist_ok=True)
     out_rom = os.path.join(OUTDIR, 'trm-yum6-oppnav.gba')
-    open(out_rom, 'wb').write(rom)
-    open(os.path.join(OUTDIR, 'oppnav.ips'), 'wb').write(make_ips([(s, stub), (h, hook)]))
+    open(out_rom, 'wb').write(patched)
+    open(os.path.join(OUTDIR, 'oppnav.ips'), 'wb').write(ips)
     print('wrote', out_rom)
     print('wrote oppnav.ips')
 
