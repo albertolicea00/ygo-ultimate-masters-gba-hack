@@ -81,4 +81,12 @@ task started (`000e→000d→000c→0005`), and clearing mode handed the turn ba
 nuance is a ~0.5s startup delay before the cursor becomes live, while an
 in-progress CPU animation finishes. Evidence: `docs/_browse_diag_run.log`,
 harness `tools/browse_diag.lua`. Also spawned a subagent that wrote
-`docs/GAME_NAVIGATION.md` and `tools/nav.py` (menu-flow automation).
+`docs/GAME_NAVIGATION.md` and `tools/nav.py` (menu-flow automation). Then built and shipped the **permanent ROM patch**: after finding that
+hooking the duel tick fails (its field-cursor chain is skipped for most of the
+CPU's turn), hooked the per-frame `ReadKeys` call (`0x080F4B7A`) instead. The
+120-byte Thumb stub (at `0x0800F700`, assembled with keystone, verified with
+capstone) sets field mode 1 on Select during the CPU's turn, blocks A, and lets
+B exit. **Validated on the patched ROM with real input**: cursor moved across
+the field during the CPU's turn, CPU paused and resumed, no desync, no graphics
+glitch. Shipped `patch/oppnav.ips` (clean CRC32 `0xF968A196` → `0xE0C3D7F0`),
+`tools/build_patch.py`, `patch/README.md`.

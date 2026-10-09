@@ -160,47 +160,56 @@ What to check:
 5. Edge cases: Select during battle damage, during a chain, and when the
    CPU's turn is about to end.
 
-### Step 2 — ROM patch
+### Step 2 — ROM patch (DONE, validated)
 
-Redirect the `bl 0x080951CC` at **`0x08094D26`** to a small Thumb stub:
+Shipped: `patch/oppnav.ips` (124 bytes changed). Built by `tools/build_patch.py`
+(keystone assembler + capstone verification).
 
+**Hook point — not the field-step.** The obvious hook, the duel tick's
+`bl 0x080951CC`, does *not* work: the tick skips that call for most of the CPU's
+turn (an internal busy-check early-returns), and the duel tick itself
+(`table[1]` at `0x09E5AADC`) is only dispatched intermittently during the CPU's
+turn. Both were tried and confirmed dead by live logging (the stub ran ~2x in
+50 frames). What runs **every** frame regardless of turn is the input poll
+`ReadKeys` (`0x080F4764`), called once from the main loop at `0x080F4B7A`. The
+patch redirects that one call through the stub.
+
+**The stub** (120 bytes at `0x0800F700`, an unreferenced zero-padding run;
+caused no graphics glitch anywhere across a full play-test):
 ```
-stub:                                   ; replaces bl 0x080951CC
-    push {r4, lr}
-    ldr  r0, =0x0201E1C8 ; ldr r0,[r0] ; movs r1,#1 ; ands r0,r1 ; lsls r0,#2
-    ldr  r1, =0x0201E2A8 ; ldr r0,[r1,r0]
-    cmp  r0, #1          ; CPU's turn?
-    bne  call
-    ldr  r1, =0x0201E22C ; ldr r2,[r1]
-    cmp  r2, #0
-    bne  browsing
-    ldr  r3, =0x03000188 ; ldrh r3,[r3] ; movs r4,#4 ; tst r3,r4   ; Select?
-    beq  call
-    movs r0, #1 ; bl SetFieldMode(0x08096988)
-    b    call
-browsing:                               ; only when we set mode 1 ourselves
-    cmp  r2, #1 ; bne call              ; (track with a spare RAM byte to be exact)
-    ldr  r3, =0x03000188 ; ldrh r4,[r3] ; movs r2,#1 ; bics r4,r2 ; strh r4,[r3] ; drop A
-call:
-    bl   0x080951CC
-    pop  {r4} ; pop {r1} ; bx r1
+push {lr}
+bl   0x080F4764          ; ReadKeys — refresh newKeys first
+if controller[turnPlayer] != 1: goto done      ; only the CPU's turn
+if fieldMode != 0:                              ; already browsing
+    newKeys &= ~A                               ; block A, then done
+if (newKeys & Select):                          ; engage
+    fieldMode = 1
+    gDuel.+1D54 = +1D58 = +1D7C = 0
+    gDuel.+1D64 = localSide                     ; = SetFieldMode(1)
+done:
+pop {pc}
 ```
 
-About 80 bytes. The ROM is the full 32MB and has no `0xFF` padding. There
-are zero-filled runs of up to ~16KB above `0x09800000` (e.g. `0x0994F8FC`,
-`0x09E052D0`). Before using one, check that nothing references it; zeros
-inside data aren't automatically free. Package the result as a BPS/IPS patch.
+**Live result (pure ROM, no Lua logic — Lua only pressed the buttons):** on the
+CPU's turn, Select set field mode 0→1 on the next frame; the injected D-pad then
+walked the cursor across the whole field
+(`050b→000d→000c→0005→0105→0205→0305→0405`, crossing to the opponent's side); B
+set mode back to 0 and the CPU resumed and finished its turn; A stayed blocked;
+the duel continued to the next turn with no desync. Field mode held 1 for the
+whole browse (92 of ~110 logged frames).
 
-### Open questions / risks
+### Apply / use
 
-- **[inferred]** CPU = controller 1. Prototype check 1 settles it.
-- Does starting field mode mid-CPU-turn leave stale state? The setter zeroes
-  `+0x1D54` ("finished"). If a CPU phase handler is waiting on that field
-  for its own reasons, entering browse could confuse it. The prototype logs
-  the old values.
-- The B exit zeroes `+0x1D5C` (result code). This needs the same check.
-- If the CPU never gives the duel tick an idle frame (the chain always busy
-  during its actions), Select only takes effect between actions. That's
-  acceptable and arguably desirable.
-- The alternative, browsing while the CPU keeps playing, isn't proposed. It
-  would need the cursor separated from the CPU's own selection display.
+See `patch/README.md`. Clean CRC32 `0xF968A196`, patched `0xE0C3D7F0`.
+
+### Resolved by validation / remaining notes
+
+- CPU = controller 1: **confirmed** live (`ctl0=0, ctl1=1`).
+- Entering field mode mid-CPU-turn left no stale-state problem: the duel ran
+  coherently across many turns of engaging/exiting, no desync or softlock.
+- Startup delay (~0.5 s) before the cursor is live, while an in-flight CPU
+  animation finishes. Pausing is immediate; only the cursor waits. Expected.
+- Not done (possible future work): let the player *act* in a limited way out
+  of turn, or browse without pausing the CPU (would need the cursor separated
+  from the CPU's own selection display). Current design is view-only + pause,
+  which is what was asked for.

@@ -24,7 +24,7 @@ Remaining work, in order:
 
 ## 2. Opponent-turn field navigation
 
-**Status: back to locating the turn state. Session 3's flag was wrong.**
+**Status: DONE. Shipped as `patch/oppnav.ips`, validated live.**
 
 1. ❌ Retracted: "duel state lives in IWRAM". Code reads/writes EWRAM duel
    structs (`0x0201E2A0`, `0x0201C4EC`) constantly, same as EDS.
@@ -39,12 +39,13 @@ Remaining work, in order:
 4. Proposed fix: **pause-and-browse**. During the CPU's turn, Select turns
    on field mode 1. The game's own field screen runs and pauses the duel
    logic while it's open, B (the native exit) resumes, and A is blocked.
-5. **Next actions**, in order:
-   1. Live-test the prototype `tools/opp_turn_browse.lua` (checklist in
-      `OPPONENT_TURN_NAVIGATION.md`).
-   2. If it holds, write the ~80-byte Thumb stub that replaces
-      `bl 0x080951CC` at `0x08094D26`, after verifying a free-space region.
-   3. Package as BPS/IPS.
+5. ✅ Live-validated the mechanism (pause-and-browse), then shipped a ROM
+   patch: a Thumb stub hooked into the per-frame `ReadKeys` call
+   (`0x080F4B7A`) that, on the CPU's turn, sets field mode 1 on Select,
+   blocks A, and lets B exit. Confirmed working on the patched ROM with real
+   input: cursor moves across the field during the CPU's turn, CPU pauses and
+   resumes, no desync. Build: `tools/build_patch.py`. Patch: `patch/oppnav.ips`
+   (+ `docs/OPPONENT_TURN_NAVIGATION.md`, `patch/README.md`).
 
 ## Longer-term / not started
 
