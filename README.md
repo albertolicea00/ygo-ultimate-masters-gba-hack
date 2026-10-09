@@ -6,6 +6,7 @@ This project is a romhack for the GBA game *Yu-Gi-Oh! World Championship Tournam
 
 1. **Gameplay Logic Modification (Opponent Turn Navigation):** ✅ **done — shipped as [`patch/oppnav.ips`](patch/oppnav.ips)**
    - Navigate the field and view cards while the opponent is taking their turn. Reverse-engineered and patched the duel loop; press **Select** on the CPU's turn to browse. See the [patch section below](#the-patch).
+   - **1.1 — Multiplayer (link / PvP):** ⏳ **pending, won't be implemented for now.** Validated only in single-player (vs the CPU). Browsing pauses the duel logic, which in a 2-player link duel could pause or desync the other player's screen — and testing a link setup properly is too involved for me to take on right now. Left documented as a known limitation rather than attempted. See the ⚠️ note in [`docs/PATCH_GUIDE.md`](docs/PATCH_GUIDE.md).
 2. ~~**Graphic Modification (SD/HD Cards):**~~ ❌ **(dropped — see below)**
    - ~~Replace the original card graphics in the ROM with higher-quality versions downscaled from an external source. (Target format: 72x80, 6bpp indexed, 64 colors).~~
    - **Why dropped:** we focused on goal 1 (which is now shipped), and this one is a bigger, separate pipeline with blockers still open. The approach is clear and feasible in principle — pull each card's illustration at higher quality, crop it to the in-game art rectangle, re-encode to the GBA's format, and write it back over the originals. But it is *not* a quick win:
