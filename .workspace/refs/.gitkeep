@@ -1,0 +1,11 @@
+# refs/
+# Reference material for reverse engineering, kept out of version control.
+#
+# Expected contents (gitignored — not committed):
+#   eds-decomp/    decompilation of Yu-Gi-Oh! The Eternal Duelist Soul
+#                  (CosmicScribe64/eds-decomp) — same Konami engine family,
+#                  a Rosetta stone for struct layout and naming. Addresses do
+#                  NOT transfer to this ROM; it is a structural reference only.
+#
+# Clone references here, e.g.:
+#   git clone https://github.com/CosmicScribe64/eds-decomp refs/eds-decomp
