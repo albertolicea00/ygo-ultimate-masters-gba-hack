@@ -9,9 +9,9 @@ Apply `oppnav.ips` to a clean `trm-yum6.gba` with any IPS patcher
 (Lunar IPS, Flips, `ips.py`, rom-patcher-js, …).
 
 - Clean ROM CRC32: `0xF968A196`
-- Patched ROM CRC32: `0xE0C3D7F0`
+- Patched ROM CRC32: `0xA4BAB1A8`
 
-The patch changes 124 bytes total: a 120-byte code stub in unused space at
+The patch changes 128 bytes total: a 124-byte code stub in unused space at
 `0x0800F700`, and one redirected call at `0x080F4B7A`.
 
 ## Use
@@ -24,6 +24,9 @@ opponent's turn pauses while you browse:
   look at cards while browsing.
 - **B** — stop browsing; the opponent's turn resumes.
 - **A is intentionally blocked** while browsing, so you can't act out of turn.
+- The game's **own forced prompts** during the opponent's turn (activate a
+  trap / quick-effect, a Yes/No, a discard) still work normally — A is only
+  blocked while *you* are browsing (after Select), not during those prompts.
 
 **Inspecting cards = Start, not A.** On your own turn, A opens a card's *command
 menu* (summon / set / activate — and the magnifying-glass "inspect" option lives

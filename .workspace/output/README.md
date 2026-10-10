@@ -4,7 +4,7 @@ This folder has **`trm-yum6-oppnav.gba`**: Yu-Gi-Oh! Ultimate Masters with the
 patch already baked in. That file IS the ready-to-play game. You don't need to
 patch anything else.
 
-- CRC32 of this file: `0xE0C3D7F0` (use it to confirm you have the right one).
+- CRC32 of this file: `0xA4BAB1A8` (use it to confirm you have the right one).
 
 ---
 
@@ -58,6 +58,10 @@ The whole point of the patch: **move around during the opponent's turn**.
    not A.**
 5. **B** → leave; the opponent's turn resumes.
 6. **A is blocked on purpose** (A opens the play menu — summon/set/activate — so
+
+If the game itself asks you to do something on the opponent's turn (activate a
+trap, a Yes/No, discard a card), that **still works** — A is only blocked while
+you are browsing with Select, not during the game's own prompts.
    it's blocked to stop you acting out of turn; Start already covers inspecting).
 
 Note: after pressing Select there's a ~half-second wait before the cursor shows,

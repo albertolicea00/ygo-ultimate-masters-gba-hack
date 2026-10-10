@@ -101,16 +101,35 @@ Why pause rather than browse while the CPU keeps playing:
 - The game already has the code for all of it: cursor, card detail, exit.
   The patch only adds an entry condition and blocks A.
 
-Out-of-turn actions must stay blocked. A opens the command menu and must be
-filtered while browsing on the CPU's turn.
+Out-of-turn actions must stay blocked while *we* are browsing. A opens the
+command menu and is filtered — but only during our browse (see the fix below).
 
-**Card inspection is on Start, A stays fully blocked (by choice).** The field
-handler already gives card inspection two ways: Start (state 3, card detail) and
-the magnifying-glass "inspect" item inside the A command menu. Since Start
-already shows the full card, the patch blocks A wholesale rather than allowing
-only the inspect item — allowing one menu item while filtering summon/set/
-activate would be extra logic for no user-visible gain. So inspection works
-during the CPU's turn; it is just mapped to Start.
+**Card inspection is on Start, A stays blocked during our browse (by choice).**
+The field handler already gives card inspection two ways: Start (state 3, card
+detail) and the magnifying-glass "inspect" item inside the A command menu. Since
+Start already shows the full card, the patch blocks A during our browse rather
+than allowing only the inspect item — allowing one menu item while filtering
+summon/set/activate would be extra logic for no user-visible gain. So inspection
+works during the CPU's turn; it is just mapped to Start.
+
+### Fix 2026-10-10 — don't block the game's own forced prompts (§B)
+
+**Bug:** during the CPU's turn the game can legitimately ask *you* to respond —
+a trap / quick-effect window, a "discard" prompt, a Yes/No. The first version
+stripped A whenever field mode was non-zero on the CPU's turn, which also killed
+these prompts: you couldn't confirm or activate anything.
+
+**Cause:** the stub treated *any* non-zero field mode as "we are browsing". But
+our browse is specifically **mode 1** (free-browse, the same mode your own turn
+uses); the game's forced prompts use other mode values (e.g. a masked card-
+select or a Yes/No). So "mode != 0" was too broad.
+
+**Fix:** strip A only when **mode == 1** (our Select-triggered browse). Engage
+stays `mode == 0 && Select`. Any other non-zero mode is the game's own prompt →
+the stub leaves A alone and the player can respond normally. The CPU never sets
+mode 1 on its own turn (that's the whole premise), so mode 1 there uniquely
+means our browse. Live-reconfirmed: engage/cursor/exit still work after the
+change.
 
 ## Live validation (2026-10-08)
 
@@ -208,7 +227,7 @@ whole browse (92 of ~110 logged frames).
 
 ### Apply / use
 
-See `patch/README.md`. Clean CRC32 `0xF968A196`, patched `0xE0C3D7F0`.
+See `patch/README.md`. Clean CRC32 `0xF968A196`, patched `0xA4BAB1A8`.
 
 ### Resolved by validation / remaining notes
 

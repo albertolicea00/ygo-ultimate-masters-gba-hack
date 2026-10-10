@@ -24,7 +24,7 @@ ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, os.path.join(ROOT, 'tools'))
 
 CLEAN_CRC = 0xF968A196
-PATCHED_CRC = 0xE0C3D7F0
+PATCHED_CRC = 0xA4BAB1A8
 
 try:
     import build_patch as bp
@@ -33,7 +33,10 @@ except Exception as e:                       # keystone/capstone missing
     HAVE_BP = False
     BP_ERR = str(e)
 
-ROM_PATH = os.path.join(ROOT, '.workspace', 'trm-yum6.gba')
+ROM_PATH = next((p for p in (
+    os.path.join(ROOT, '.workspace', 'game', 'trm-yum6.gba'),
+    os.path.join(ROOT, '.workspace', 'trm-yum6.gba'),
+) if os.path.exists(p)), os.path.join(ROOT, '.workspace', 'game', 'trm-yum6.gba'))
 
 
 class Skip(Exception):

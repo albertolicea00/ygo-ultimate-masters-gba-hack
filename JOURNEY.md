@@ -91,3 +91,15 @@ B exit. **Validated on the patched ROM with real input**: cursor moved across
 the field during the CPU's turn, CPU paused and resumed, no desync, no graphics
 glitch. Shipped `patch/oppnav.ips` (clean CRC32 `0xF968A196` → `0xE0C3D7F0`),
 `tools/build_patch.py`, `patch/README.md`.
+
+## 2026-10-10 — Session 7
+
+Bug fix from play-testing: during the CPU's turn the game can force *you* to
+respond (trap / quick-effect, Yes/No, discard), but the patch stripped A for any
+non-zero field mode, so those prompts were unusable. Changed the stub to strip A
+only when field mode == 1 (our Select-triggered browse); every other non-zero
+mode is the game's own prompt and is left alone. Engage stays `mode==0 && Select`.
+Live-reconfirmed the browse still engages/moves/exits. Patched CRC32 is now
+`0xA4BAB1A8` (stub grew to 124 bytes). Also pointed the builder/tests at the new
+ROM location (`.workspace/game/trm-yum6.gba`). See `OPPONENT_TURN_NAVIGATION.md`
+§ "Fix 2026-10-10".

@@ -16,7 +16,7 @@ with it, rebuilding it, testing it, and how it works.
 - The patch: `patch/oppnav.ips` (142 bytes).
 - Any IPS patcher (see below).
 
-The patch changes **124 bytes**: a 120-byte code stub in unused space at ROM
+The patch changes **128 bytes**: a 124-byte code stub in unused space at ROM
 `0x0800F700`, and one redirected call (4 bytes) at `0x080F4B7A`. It touches no
 save data, so existing `.sav` files keep working.
 
@@ -24,7 +24,7 @@ save data, so existing `.sav` files keep working.
 
 ## 2. Apply the patch
 
-Pick one patcher. All produce the same output — **patched CRC32 `0xE0C3D7F0`**.
+Pick one patcher. All produce the same output — **patched CRC32 `0xA4BAB1A8`**.
 
 ### Option A — rom-patcher-js (browser, nothing to install)
 1. Open <https://www.marcrobledo.com/RomPatcher.js/>.
@@ -53,7 +53,7 @@ PY
 ### Verify
 ```bash
 python3 -c "import zlib;print(hex(zlib.crc32(open('trm-yum6-oppnav.gba','rb').read())))"
-# expect 0xe0c3d7f0
+# expect 0xa4bab1a8
 ```
 If you don't want to patch at all, a pre-built ROM is written to
 `.workspace/output/trm-yum6-oppnav.gba` when you run the builder (section 4).
@@ -72,6 +72,10 @@ Load the patched ROM in any GBA emulator (tested on mGBA 0.10.5). During the
 | **Start**  | **inspect the highlighted card** (full art + text) |
 | **B**      | stop browsing — the CPU's turn resumes |
 | **A**      | intentionally blocked (you cannot act out of turn) |
+
+The game's **own forced prompts** on the opponent's turn (activate a trap /
+quick-effect, a Yes/No, a discard) are **not** affected — A is blocked only while
+you are browsing (mode 1), so you can still respond to those normally.
 
 **To inspect a card, press Start — not A.** On your own turn A opens the card's
 *command menu* (summon / set / activate; the magnifying-glass "inspect" option is

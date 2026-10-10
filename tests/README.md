@@ -17,7 +17,7 @@ pytest tests/test_patch.py      # same tests under pytest, if installed
 - the hook re-encodes to `bl <stub>`;
 - the stub actually calls `ReadKeys`, and its literal pool holds the documented
   RAM addresses;
-- applying the patch to a clean ROM gives the expected CRC32 (`0xE0C3D7F0`);
+- applying the patch to a clean ROM gives the expected CRC32 (`0xA4BAB1A8`);
 - the generated IPS, applied to a clean ROM, reproduces the patched ROM exactly;
 - **only** the stub + hook bytes change, nowhere else;
 - the stub's landing zone in the ROM was genuinely free (zero-filled).

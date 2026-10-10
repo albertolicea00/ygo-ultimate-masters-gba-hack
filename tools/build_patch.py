@@ -45,7 +45,16 @@ DUEL = 0x0201C4E0           # +0x1D54/0x1D58/0x1D64/0x1D7C are SetFieldMode's fi
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 ROOT = os.path.dirname(HERE)
-ROM = os.path.join(ROOT, '.workspace', 'trm-yum6.gba')
+def _find_rom():
+    for rel in (('.workspace', 'game', 'trm-yum6.gba'),
+                ('.workspace', 'trm-yum6.gba')):
+        p = os.path.join(ROOT, *rel)
+        if os.path.exists(p):
+            return p
+    return os.path.join(ROOT, '.workspace', 'game', 'trm-yum6.gba')
+
+
+ROM = _find_rom()
 OUTDIR = os.path.join(ROOT, '.workspace', 'output')
 
 STUB_SRC = '''
@@ -64,7 +73,13 @@ start:
     ldr  r2, Lmode
     ldr  r3, [r2]
     cmp  r3, #0
-    bne  Lbrowse              /* already browsing -> strip A */
+    beq  Lcheckselect        /* field mode 0 -> maybe start browsing on Select */
+    cmp  r3, #1
+    beq  Lbrowse             /* mode 1 = OUR browse -> block A */
+    b    Ldone               /* any other mode = the game's own prompt (e.g. a
+                                trap/quick-effect response) -> leave A alone so
+                                the player can actually respond */
+Lcheckselect:
     ldr  r0, Lnewkeys
     ldrh r1, [r0]
     movs r3, #4               /* Select */
